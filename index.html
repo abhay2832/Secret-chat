@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Chat - Code Share Chat</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Room Code Generator -->
+    <div id="roomGenerator" class="screen">
+        <div class="container">
+            <h1>🔐 Private Chat Room</h1>
+            <p>Sabse Secure Chat - Sirf 2 log hi join kar sakte hain</p>
+            <button id="generateRoom" class="btn-primary">📱 Room Code Banayein</button>
+            <div id="roomCodeContainer" class="room-code" style="display: none;">
+                <h3>Apna Room Code:</h3>
+                <div class="code-display">
+                    <span id="roomCode"></span>
+                    <button id="copyCode" class="btn-copy">📋 Copy</button>
+                </div>
+                <p>Ye code dusre person ko bhejein</p>
+                <button id="joinRoom" class="btn-primary">🚀 Chat Start Karein</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join Room Screen -->
+    <div id="joinRoomScreen" class="screen" style="display: none;">
+        <div class="container">
+            <h1>👥 Room Join Karein</h1>
+            <input type="text" id="joinRoomCode" placeholder="Room Code Yahan Paste Karein" class="input-large">
+            <button id="joinBtn" class="btn-primary">Join Room</button>
+            <button id="backToGenerator" class="btn-secondary">← Wapis</button>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chatScreen" class="screen" style="display: none;">
+        <div class="chat-header">
+            <div class="room-info">
+                <span id="currentRoomCode">Room: Loading...</span>
+                <span id="onlineStatus" class="status-online">🟢 Online (1/2)</span>
+            </div>
+            <div class="header-actions">
+                <button id="videoCallBtn" class="btn-video" title="Video Call">📹</button>
+                <button id="voiceCallBtn" class="btn-voice" title="Voice Call">📞</button>
+                <button id="leaveRoom" class="btn-leave">❌ Leave</button>
+            </div>
+        </div>
+
+        <div id="messagesContainer" class="messages-container">
+            <div id="welcomeMessage" class="system-message">
+                <p>✅ Room ready hai! Dusre person ka wait kar rahe hain...</p>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="emoji-picker" id="emojiPicker">
+                <!-- Emojis will be loaded here -->
+            </div>
+            <div class="input-wrapper">
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                <button id="attachBtn" class="attach-btn">📎</button>
+                <input type="text" id="messageInput" placeholder="Type message or emoji..." maxlength="500">
+                <button id="sendBtn" class="send-btn">Send</button>
+            </div>
+        </div>
+
+        <!-- Video Call UI -->
+        <div id="videoCallContainer" class="video-call-container" style="display: none;">
+            <div class="video-grid">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <video id="remoteVideo" autoplay playsinline></video>
+            </div>
+            <div class="video-controls">
+                <button id="endCallBtn" class="btn-end-call">📞 End Call</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call Notifications -->
+    <div id="incomingCall" class="call-notification" style="display: none;">
+        <div class="call-content">
+            <h3>📞 Incoming Call</h3>
+            <div class="call-buttons">
+                <button id="acceptCall" class="btn-accept">Accept</button>
+                <button id="rejectCall" class="btn-reject">Reject</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
