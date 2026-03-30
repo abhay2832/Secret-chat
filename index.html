@@ -3,414 +3,209 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Instant Chat - No Login Needed</title>
+  <title>Quick DM - Instagram Chat</title>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      overflow: hidden;
-      color: #333;
-    }
-
-    .chat-container {
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      max-width: 500px;
-      margin: 0 auto;
-      background: rgba(255, 255, 255, 0.95);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-      backdrop-filter: blur(20px);
-    }
-
-    .chat-header {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      padding: 20px;
-      text-align: center;
-      position: relative;
-    }
-
-    .status {
-      font-size: 0.9rem;
-      opacity: 0.9;
-      margin-top: 5px;
-    }
-
-    .user-count {
-      position: absolute;
-      right: 20px;
-      top: 20px;
-      background: rgba(255,255,255,0.2);
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-    }
-
-    .messages-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      background: #f8f9fa;
-    }
-
-    .message {
-      margin-bottom: 15px;
-      display: flex;
-      animation: messageSlide 0.3s ease;
-    }
-
-    .message.sent {
-      justify-content: flex-end;
-    }
-
-    .message-bubble {
-      max-width: 80%;
-      padding: 12px 16px;
-      border-radius: 18px;
-      position: relative;
-      word-wrap: break-word;
-    }
-
-    .message.sent .message-bubble {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
-
-    .message.received .message-bubble {
-      background: white;
-      color: #333;
-      border-bottom-left-radius: 4px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .message-time {
-      font-size: 0.7rem;
-      opacity: 0.7;
-      margin-top: 4px;
-    }
-
-    .message-image {
-      max-width: 200px;
-      max-height: 200px;
-      border-radius: 12px;
-      cursor: pointer;
-    }
-
-    .message-actions {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      display: none;
-      gap: 5px;
-    }
-
-    .message.sent .message-actions {
-      right: 5px;
-    }
-
-    .message:hover .message-actions {
-      display: flex;
-    }
-
-    .edit-btn, .delete-btn {
-      background: none;
-      border: none;
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 0.8rem;
-      cursor: pointer;
-      padding: 2px 5px;
-      border-radius: 4px;
-    }
-
-    .typing-indicator {
-      padding: 10px 20px;
-      color: #666;
-      font-style: italic;
-      font-size: 0.9rem;
-      display: none;
-    }
-
-    .message-input-container {
-      padding: 20px;
-      background: white;
-      border-top: 1px solid #eee;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    #messageInput {
-      flex: 1;
-      background: #f1f3f4;
-      border: none;
-      border-radius: 25px;
-      padding: 15px 20px;
-      font-size: 1rem;
-      outline: none;
-    }
-
-    #sendBtn {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      border: none;
-      padding: 15px 20px;
-      border-radius: 25px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: all 0.3s;
-      width: 60px;
-      height: 52px;
-    }
-
-    #sendBtn:hover:not(:disabled) {
-      transform: scale(1.05);
-    }
-
-    .image-btn {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: #f1f3f4;
-      color: #666;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 1.2rem;
-      transition: all 0.3s;
-      border: none;
-    }
-
-    .image-btn:hover {
-      background: #e2e8f0;
-      transform: scale(1.05);
-    }
-
-    .welcome-message {
-      text-align: center;
-      color: #666;
-      margin-top: 50px;
-      font-size: 1.1rem;
-    }
-
-    @keyframes messageSlide {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (max-width: 480px) {
-      .chat-container {
-        margin: 0;
-        border-radius: 0;
-        height: 100vh;
-      }
-    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,height:100vh;background:#000;color:#fff;overflow:hidden}
+    
+    .screen{display:none;height:100vh;flex-direction:column}
+    .screen.active{display:flex}
+    
+    /* HOME */
+    #home{background:linear-gradient(135deg,#1e3c72,#2a5298);justify-content:center;align-items:center;padding:40px;text-align:center}
+    .logo{font-size:3rem;margin-bottom:30px}
+    .connect-btn{background:linear-gradient(135deg,#f093fb,#f5576c);color:white;border:none;padding:20px 40px;border-radius:50px;font-size:1.2rem;cursor:pointer;transition:all .3s;font-weight:600;margin:20px 0;transform:scale(1)}
+    .connect-btn:hover{transform:scale(1.05);box-shadow:0 10px 30px rgba(240,147,251,.4)}
+    .status{font-size:1.1rem;margin:20px 0;color:#ddd}
+    
+    /* CHAT */
+    #chatScreen{background:#000}
+    .header{padding:20px;background:rgba(0,0,0,.9);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333}
+    .friend-name{font-size:1.2rem;font-weight:600}
+    .online{font-size:.8rem;color:#4ade80}
+    
+    .messages{flex:1;overflow-y:auto;padding:20px;background:#000}
+    .message{margin-bottom:15px;display:flex;animation:slideIn .3s}
+    .message.sent{justify-content:flex-end}
+    .bubble{max-width:70%;padding:12px 16px;border-radius:20px;position:relative}
+    .sent .bubble{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-bottom-right-radius:5px}
+    .received .bubble{background:rgba(255,255,255,.1);color:white;border-bottom-left-radius:5px}
+    .time{font-size:.7rem;opacity:.7;margin-top:5px}
+    .image{max-width:200px;border-radius:15px;cursor:pointer}
+    
+    .typing{padding:10px 20px;color:#aaa;font-style:italic;font-size:.9rem;display:none}
+    
+    .input-area{padding:20px;background:rgba(0,0,0,.9);display:flex;gap:10px;align-items:center}
+    #messageInput{flex:1;background:rgba(255,255,255,.1);border:none;border-radius:25px;padding:15px 20px;color:white;font-size:1rem}
+    #sendBtn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:25px;padding:15px 20px;cursor:pointer;font-size:1rem;transition:all .3s}
+    #sendBtn:hover{transform:scale(1.05)}
+    .photo-btn{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.2);color:white;border:none;cursor:pointer;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+    
+    .call-btns{display:flex;gap:10px}
+    .call-btn{width:45px;height:45px;border-radius:50%;border:none;background:rgba(255,255,255,.2);color:white;font-size:1.1rem;cursor:pointer;transition:all .3s}
+    .call-btn:hover{background:rgba(255,255,255,.3);transform:scale(1.1)}
+    
+    @keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">
-      <h2>💬 Instant Chat</h2>
-      <div class="status" id="status">Waiting for friend...</div>
-      <div class="user-count" id="userCount">1/2</div>
-    </div>
+  <!-- HOME SCREEN -->
+  <div id="home" class="screen active">
+    <div class="logo">💬 Quick DM</div>
+    <p style="margin-bottom:20px;font-size:1.2rem">Instagram jaisa chat - bina login!</p>
+    <button class="connect-btn" id="connectBtn">🚀 Friend se Connect Karo</button>
+    <div class="status" id="status">Ready to chat...</div>
+  </div>
 
-    <div class="messages-container" id="messagesContainer">
-      <div class="welcome-message">
-        👋 Open this page in <strong>2 browser tabs</strong><br>
-        Start typing - messages appear instantly! ✨
+  <!-- CHAT SCREEN -->
+  <div id="chatScreen" class="screen">
+    <div class="header">
+      <div>
+        <div class="friend-name" id="friendName">Friend</div>
+        <div class="online" id="onlineStatus">Connecting...</div>
+      </div>
+      <div class="call-btns">
+        <button class="call-btn" id="voiceCall" title="Voice Call">📞</button>
+        <button class="call-btn" id="videoCall" title="Video Call">🎥</button>
       </div>
     </div>
-
-    <div class="typing-indicator" id="typingIndicator">Someone is typing...</div>
-
-    <div class="message-input-container">
-      <label for="imageInput" class="image-btn">📷</label>
-      <input type="file" id="imageInput" accept="image/*" style="display: none;">
-      <input type="text" id="messageInput" placeholder="Type a message..." maxlength="500">
+    
+    <div class="messages" id="messages">
+      <div class="message received">
+        <div class="bubble">
+          <div>✨ Friend connected! Chat shuru karo!</div>
+          <div class="time">Abhi</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="typing" id="typing">Typing...</div>
+    
+    <div class="input-area">
+      <button class="photo-btn" id="photoBtn">📷</button>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <input type="text" id="messageInput" placeholder="Type message...">
       <button id="sendBtn">Send</button>
     </div>
   </div>
 
   <script>
-    class InstantChat {
+    class QuickDM {
       constructor() {
-        this.socket = io('https://chat-quick.onrender.com/room/global'); // ONE GLOBAL ROOM
-        this.userId = Math.random().toString(36).substring(2, 8);
+        this.socket = io('wss://chat-quick.onrender.com/quick');
+        this.peer = null;
+        this.roomId = 'quick-room-' + Math.random().toString(36).substr(2, 9);
         this.init();
       }
 
       init() {
         this.bindEvents();
-        this.connectSocket();
-        this.updateUserCount(1);
+        this.socket.on('connect', () => {
+          document.getElementById('status').textContent = 'Server connected! 1-click mein friend connect';
+        });
+        
+        // Friend connected
+        this.socket.on('friendConnected', () => {
+          document.getElementById('onlineStatus').textContent = 'Online ✅';
+          this.showChat();
+        });
+        
+        this.socket.on('message', msg => this.addMessage(msg, 'received'));
+        this.socket.on('image', img => this.addImage(img, 'received'));
+        this.socket.on('typing', typing => {
+          document.getElementById('typing').style.display = typing ? 'block' : 'none';
+        });
       }
 
       bindEvents() {
-        document.getElementById('sendBtn').onclick = () => this.sendMessage();
-        document.getElementById('messageInput').onkeypress = (e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            this.sendMessage();
-          } else if (e.target.value) {
-            this.socket.emit('typing', true);
-          } else {
-            this.socket.emit('typing', false);
-          }
+        document.getElementById('connectBtn').onclick = () => {
+          this.socket.emit('joinQuickRoom');
         };
-
-        document.getElementById('imageInput').onchange = (e) => this.sendImage(e);
         
-        // Message actions
-        document.addEventListener('click', (e) => {
-          if (e.target.classList.contains('delete-btn')) {
-            this.deleteMessage(e.target.dataset.messageId);
-          } else if (e.target.classList.contains('edit-btn')) {
-            this.editMessage(e.target.dataset.messageId);
-          }
-        });
+        document.getElementById('sendBtn').onclick = () => this.send();
+        document.getElementById('messageInput').onkeypress = e => {
+          if(e.key==='Enter') this.send();
+          else this.socket.emit('typing', true);
+        };
+        document.getElementById('messageInput').oninput = () => {
+          if(!document.getElementById('messageInput').value) 
+            this.socket.emit('typing', false);
+        };
+        
+        document.getElementById('photoBtn').onclick = () => 
+          document.getElementById('fileInput').click();
+        document.getElementById('fileInput').onchange = e => this.sendPhoto(e);
       }
 
-      connectSocket() {
-        this.socket.on('connect', () => {
-          console.log('✅ Connected!');
-          document.getElementById('status').textContent = 'Connected ✅';
-        });
-
-        this.socket.on('userCount', (count) => {
-          this.updateUserCount(count);
-          if (count >= 2) {
-            document.getElementById('status').textContent = 'Friend online! 👋';
-            document.querySelector('.welcome-message').style.display = 'none';
-          }
-        });
-
-        // Messages
-        this.socket.on('newMessage', (msg) => {
-          if (msg.sender !== this.userId) {
-            this.addMessage(msg, 'received');
-          }
-        });
-
-        this.socket.on('newImage', (msg) => {
-          if (msg.sender !== this.userId) {
-            this.addMessage(msg, 'received');
-          }
-        });
-
-        this.socket.on('messageDeleted', (id) => {
-          const msg = document.querySelector(`[data-message-id="${id}"]`);
-          if (msg) msg.remove();
-        });
-
-        // Typing
-        this.socket.on('userTyping', (typing) => {
-          const indicator = document.getElementById('typingIndicator');
-          if (typing) {
-            indicator.style.display = 'block';
-          } else {
-            indicator.style.display = 'none';
-          }
-        });
-      }
-
-      updateUserCount(count) {
-        document.getElementById('userCount').textContent = `${count}/∞`;
-      }
-
-      sendMessage() {
+      send() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
-        if (text) {
+        if(text) {
           const msg = {
-            id: Date.now(),
-            text,
-            sender: this.userId,
-            timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-            type: 'text'
+            text, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+            sender: 'me'
           };
+          this.addMessage(msg, 'sent');
           this.socket.emit('message', msg);
           input.value = '';
           this.socket.emit('typing', false);
         }
       }
 
-      sendImage(event) {
-        const file = event.target.files[0];
-        if (file) {
+      sendPhoto(e) {
+        const file = e.target.files[0];
+        if(file) {
           const reader = new FileReader();
-          reader.onload = (e) => {
-            const msg = {
-              id: Date.now(),
-              image: e.target.result,
-              sender: this.userId,
-              timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-              type: 'image'
+          reader.onload = ev => {
+            const img = {
+              data: ev.target.result,
+              time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+              sender: 'me'
             };
-            this.socket.emit('image', msg);
+            this.addImage(img, 'sent');
+            this.socket.emit('image', img);
           };
           reader.readAsDataURL(file);
         }
       }
 
       addMessage(msg, type) {
-        const container = document.getElementById('messagesContainer');
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${type}`;
-        messageDiv.dataset.messageId = msg.id;
-
-        if (msg.type === 'image') {
-          messageDiv.innerHTML = `
-            <div class="message-bubble">
-              <img src="${msg.image}" class="message-image" onclick="window.open(this.src)">
-              <div class="message-time">${msg.timestamp}</div>
-              ${type === 'sent' ? '<div class="message-actions"><button class="delete-btn" data-message-id="${msg.id}">🗑️</button></div>' : ''}
-            </div>
-          `;
-        } else {
-          messageDiv.innerHTML = `
-            <div class="message-bubble">
-              <div>${msg.text}</div>
-              <div class="message-time">${msg.timestamp}${msg.edited ? ' ✏️' : ''}</div>
-              ${type === 'sent' ? '<div class="message-actions"><button class="edit-btn" data-message-id="${msg.id}">✏️</button><button class="delete-btn" data-message-id="${msg.id}">🗑️</button></div>' : ''}
-            </div>
-          `;
-        }
-
-        container.appendChild(messageDiv);
-        container.scrollTop = container.scrollHeight;
+        const msgs = document.getElementById('messages');
+        const div = document.createElement('div');
+        div.className = `message ${type}`;
+        div.innerHTML = `
+          <div class="bubble">
+            <div>${msg.text}</div>
+            <div class="time">${msg.time}</div>
+          </div>
+        `;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
       }
 
-      deleteMessage(id) {
-        this.socket.emit('deleteMessage', { id });
+      addImage(img, type) {
+        const msgs = document.getElementById('messages');
+        const div = document.createElement('div');
+        div.className = `message ${type}`;
+        div.innerHTML = `
+          <div class="bubble">
+            <img src="${img.data}" class="image" onclick="window.open(this.src)">
+            <div class="time">${img.time}</div>
+          </div>
+        `;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
       }
 
-      editMessage(id) {
-        const msg = document.querySelector(`[data-message-id="${id}"] .message-bubble div`);
-        const newText = prompt('Edit message:', msg.textContent);
-        if (newText !== null && newText.trim()) {
-          this.socket.emit('editMessage', { id, newText: newText.trim() });
-        }
-      }
-
-      showTyping(typing) {
-        const indicator = document.getElementById('typingIndicator');
-        indicator.style.display = typing ? 'block' : 'none';
+      showChat() {
+        document.getElementById('home').classList.remove('active');
+        document.getElementById('chatScreen').classList.add('active');
       }
     }
 
-    // Start chat
-    const chat = new InstantChat();
+    new QuickDM();
   </script>
 </body>
 </html>
