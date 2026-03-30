@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuickChat - Instagram DM Clone (No Login)</title>
+  <title>Instant Chat - No Login Needed</title>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
     * {
@@ -20,153 +20,46 @@
       color: #333;
     }
 
-    .screen {
-      display: none;
+    .chat-container {
       height: 100vh;
-      position: relative;
-    }
-
-    .screen.active {
       display: flex;
       flex-direction: column;
-    }
-
-    /* Home Screen */
-    #homeScreen {
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-    }
-
-    .logo {
-      font-size: 2.5rem;
-      margin-bottom: 40px;
-      background: linear-gradient(45deg, #fff, #f0f0f0);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .code-container {
+      max-width: 500px;
+      margin: 0 auto;
       background: rgba(255, 255, 255, 0.95);
-      padding: 40px;
-      border-radius: 20px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-      backdrop-filter: blur(10px);
-      max-width: 400px;
-      width: 90%;
-    }
-
-    .your-code h3, .connect-section h3 {
-      margin-bottom: 15px;
-      color: #333;
-      font-size: 1.1rem;
-    }
-
-    .code-display {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      padding: 20px;
-      border-radius: 12px;
-      font-size: 1.8rem;
-      font-weight: bold;
-      letter-spacing: 3px;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-
-    .copy-btn, #connectBtn {
-      background: #667eea;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 25px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: all 0.3s;
-      margin: 5px;
-    }
-
-    .copy-btn:hover, #connectBtn:hover {
-      background: #5a67d8;
-      transform: translateY(-2px);
-    }
-
-    .input-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    #friendCode {
-      flex: 1;
-      padding: 15px;
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      text-align: center;
-    }
-
-    /* Chat Screen */
-    #chatScreen {
-      background: #000;
+      backdrop-filter: blur(20px);
     }
 
     .chat-header {
-      background: rgba(0, 0, 0, 0.9);
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .friend-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .friend-code {
+      background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
-      font-size: 1.1rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
     }
 
-    .online-status {
+    .status {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      margin-top: 5px;
+    }
+
+    .user-count {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background: rgba(255,255,255,0.2);
+      padding: 5px 12px;
+      border-radius: 20px;
       font-size: 0.8rem;
-      color: #4ade80;
-    }
-
-    .call-buttons button {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      font-size: 1.2rem;
-      cursor: pointer;
-      margin-left: 10px;
-      transition: all 0.3s;
-    }
-
-    .call-buttons button:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: scale(1.1);
     }
 
     .messages-container {
       flex: 1;
       overflow-y: auto;
       padding: 20px;
-      background: #000;
-      scroll-behavior: smooth;
+      background: #f8f9fa;
     }
 
     .message {
@@ -180,7 +73,7 @@
     }
 
     .message-bubble {
-      max-width: 70%;
+      max-width: 80%;
       padding: 12px 16px;
       border-radius: 18px;
       position: relative;
@@ -194,9 +87,10 @@
     }
 
     .message.received .message-bubble {
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
+      background: white;
+      color: #333;
       border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
     .message-time {
@@ -231,7 +125,7 @@
     .edit-btn, .delete-btn {
       background: none;
       border: none;
-      color: rgba(255, 255, 255, 0.7);
+      color: rgba(255, 255, 255, 0.8);
       font-size: 0.8rem;
       cursor: pointer;
       padding: 2px 5px;
@@ -240,16 +134,16 @@
 
     .typing-indicator {
       padding: 10px 20px;
-      color: rgba(255, 255, 255, 0.7);
+      color: #666;
       font-style: italic;
       font-size: 0.9rem;
       display: none;
     }
 
     .message-input-container {
-      padding: 15px 20px;
-      background: rgba(0, 0, 0, 0.9);
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      background: white;
+      border-top: 1px solid #eee;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -257,11 +151,10 @@
 
     #messageInput {
       flex: 1;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: #f1f3f4;
+      border: none;
       border-radius: 25px;
       padding: 15px 20px;
-      color: white;
       font-size: 1rem;
       outline: none;
     }
@@ -275,6 +168,8 @@
       cursor: pointer;
       font-size: 1rem;
       transition: all 0.3s;
+      width: 60px;
+      height: 52px;
     }
 
     #sendBtn:hover:not(:disabled) {
@@ -282,79 +177,31 @@
     }
 
     .image-btn {
-      width: 50px;
-      height: 50px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
+      background: #f1f3f4;
+      color: #666;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       font-size: 1.2rem;
       transition: all 0.3s;
+      border: none;
     }
 
     .image-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: scale(1.1);
+      background: #e2e8f0;
+      transform: scale(1.05);
     }
 
-    /* Call UI */
-    .call-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .call-container.active {
-      display: flex;
-    }
-
-    .call-content {
+    .welcome-message {
       text-align: center;
-      color: white;
+      color: #666;
+      margin-top: 50px;
+      font-size: 1.1rem;
     }
-
-    .call-type {
-      font-size: 1.5rem;
-      margin-bottom: 20px;
-    }
-
-    video {
-      width: 300px;
-      height: 200px;
-      background: #333;
-      border-radius: 12px;
-      margin: 10px;
-    }
-
-    .call-controls {
-      display: flex;
-      gap: 15px;
-      margin-top: 20px;
-    }
-
-    .call-btn {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .answer { background: #4ade80; color: white; }
-    .end { background: #ef4444; color: white; }
-    .reject { background: #6b7280; color: white; }
 
     @keyframes messageSlide {
       from { opacity: 0; transform: translateY(20px); }
@@ -362,199 +209,208 @@
     }
 
     @media (max-width: 480px) {
-      .code-container { padding: 20px; }
-      .code-display { font-size: 1.5rem; }
-      video { width: 250px; height: 180px; }
+      .chat-container {
+        margin: 0;
+        border-radius: 0;
+        height: 100vh;
+      }
     }
   </style>
 </head>
 <body>
-  <!-- Home Screen -->
-  <div id="homeScreen" class="screen active">
-    <div class="logo">💬 QuickChat</div>
-    <div class="code-container">
-      <div class="your-code">
-        <h3>Your Code</h3>
-        <div class="code-display" id="userCode">Connecting...</div>
-        <button id="copyCode" class="copy-btn">📋 Copy</button>
-      </div>
-      <div class="connect-section">
-        <h3>👫 Connect with Friend</h3>
-        <div class="input-group">
-          <input type="text" id="friendCode" placeholder="Enter Friend Code" maxlength="6">
-          <button id="connectBtn">Connect</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Chat Screen -->
-  <div id="chatScreen" class="screen">
+  <div class="chat-container">
     <div class="chat-header">
-      <div class="friend-info">
-        <div class="friend-code" id="friendCodeDisplay">-</div>
-        <div class="online-status" id="onlineStatus">Connecting...</div>
-      </div>
-      <div class="call-buttons">
-        <button id="voiceCall" title="Voice Call">📞</button>
-        <button id="videoCall" title="Video Call">🎥</button>
-      </div>
+      <h2>💬 Instant Chat</h2>
+      <div class="status" id="status">Waiting for friend...</div>
+      <div class="user-count" id="userCount">1/2</div>
     </div>
 
     <div class="messages-container" id="messagesContainer">
-      <div class="message received">
-        <div class="message-bubble">
-          <p>💬 Chat connected! Say hello! ✨</p>
-          <div class="message-time">Now</div>
-        </div>
+      <div class="welcome-message">
+        👋 Open this page in <strong>2 browser tabs</strong><br>
+        Start typing - messages appear instantly! ✨
       </div>
     </div>
 
-    <div class="typing-indicator" id="typingIndicator"></div>
+    <div class="typing-indicator" id="typingIndicator">Someone is typing...</div>
 
     <div class="message-input-container">
       <label for="imageInput" class="image-btn">📷</label>
       <input type="file" id="imageInput" accept="image/*" style="display: none;">
-      <input type="text" id="messageInput" placeholder="Type a message...">
+      <input type="text" id="messageInput" placeholder="Type a message..." maxlength="500">
       <button id="sendBtn">Send</button>
     </div>
   </div>
 
-  <!-- Call UI -->
-  <div id="callContainer" class="call-container">
-    <div class="call-content">
-      <div class="call-type" id="callType">Incoming Call</div>
-      <video id="remoteVideo" autoplay playsinline muted></video>
-      <video id="localVideo" autoplay playsinline muted style="width: 120px; height: 90px; position: absolute; bottom: 20%; right: 20%;"></video>
-      <div class="call-controls">
-        <button id="answerCall" class="call-btn answer">✅ Answer</button>
-        <button id="rejectCall" class="call-btn reject">❌ Reject</button>
-        <button id="endCall" class="call-btn end" style="display: none;">❌ End</button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    class QuickChat {
+    class InstantChat {
       constructor() {
-        this.socket = io('https://chat-quick.onrender.com'); // FREE HOSTED SERVER
-        this.userCode = null;
-        this.roomId = null;
-        this.currentCall = null;
-        this.localStream = null;
+        this.socket = io('https://chat-quick.onrender.com/room/global'); // ONE GLOBAL ROOM
+        this.userId = Math.random().toString(36).substring(2, 8);
         this.init();
       }
 
       init() {
         this.bindEvents();
         this.connectSocket();
+        this.updateUserCount(1);
       }
 
       bindEvents() {
-        // Home screen
-        document.getElementById('copyCode').onclick = () => this.copyCode();
-        document.getElementById('connectBtn').onclick = () => this.connect();
-        document.getElementById('friendCode').onkeypress = (e) => {
-          if (e.key === 'Enter') this.connect();
-        };
-
-        // Chat screen
         document.getElementById('sendBtn').onclick = () => this.sendMessage();
         document.getElementById('messageInput').onkeypress = (e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             this.sendMessage();
+          } else if (e.target.value) {
+            this.socket.emit('typing', true);
+          } else {
+            this.socket.emit('typing', false);
           }
         };
-        document.getElementById('imageInput').onchange = (e) => this.sendImage(e);
-        document.getElementById('voiceCall').onclick = () => this.startCall('voice');
-        document.getElementById('videoCall').onclick = () => this.startCall('video');
 
-        // Call controls
-        document.getElementById('answerCall').onclick = () => this.answerCall();
-        document.getElementById('rejectCall').onclick = () => this.rejectCall();
-        document.getElementById('endCall').onclick = () => this.endCall();
+        document.getElementById('imageInput').onchange = (e) => this.sendImage(e);
+        
+        // Message actions
+        document.addEventListener('click', (e) => {
+          if (e.target.classList.contains('delete-btn')) {
+            this.deleteMessage(e.target.dataset.messageId);
+          } else if (e.target.classList.contains('edit-btn')) {
+            this.editMessage(e.target.dataset.messageId);
+          }
+        });
       }
 
       connectSocket() {
         this.socket.on('connect', () => {
-          console.log('Connected to server');
+          console.log('✅ Connected!');
+          document.getElementById('status').textContent = 'Connected ✅';
         });
 
-        this.socket.on('userCode', (code) => {
-          this.userCode = code;
-          document.getElementById('userCode').textContent = code;
+        this.socket.on('userCount', (count) => {
+          this.updateUserCount(count);
+          if (count >= 2) {
+            document.getElementById('status').textContent = 'Friend online! 👋';
+            document.querySelector('.welcome-message').style.display = 'none';
+          }
         });
 
-        this.socket.on('error', (msg) => {
-          alert(msg);
+        // Messages
+        this.socket.on('newMessage', (msg) => {
+          if (msg.sender !== this.userId) {
+            this.addMessage(msg, 'received');
+          }
         });
 
-        // Chat events
-        this.socket.on('roomJoined', (data) => {
-          this.roomId = data.roomId;
-          document.getElementById('friendCodeDisplay').textContent = data.friendCode;
-          this.showChatScreen();
+        this.socket.on('newImage', (msg) => {
+          if (msg.sender !== this.userId) {
+            this.addMessage(msg, 'received');
+          }
         });
 
-        this.socket.on('friendJoined', (data) => {
-          this.roomId = data.roomId;
-          document.getElementById('friendCodeDisplay').textContent = data.code;
-          document.getElementById('onlineStatus').textContent = 'Online ✅';
-          this.showChatScreen();
+        this.socket.on('messageDeleted', (id) => {
+          const msg = document.querySelector(`[data-message-id="${id}"]`);
+          if (msg) msg.remove();
         });
 
-        this.socket.on('userLeft', () => {
-          document.getElementById('onlineStatus').textContent = 'Offline ❌';
+        // Typing
+        this.socket.on('userTyping', (typing) => {
+          const indicator = document.getElementById('typingIndicator');
+          if (typing) {
+            indicator.style.display = 'block';
+          } else {
+            indicator.style.display = 'none';
+          }
         });
-
-        this.socket.on('newMessage', (msg) => this.addMessage(msg, 'received'));
-        this.socket.on('messageSent', (msg) => this.addMessage(msg, 'sent'));
-        this.socket.on('newImage', (msg) => this.addMessage(msg, 'received'));
-        this.socket.on('imageSent', (msg) => this.addMessage(msg, 'sent'));
-        this.socket.on('messageEdited', (msg) => this.updateMessage(msg));
-        this.socket.on('messageDeleted', (id) => this.deleteMessage(id));
-        this.socket.on('userTyping', (data) => this.showTyping(data));
-
-        // Call events
-        this.socket.on('incomingCall', (data) => this.handleIncomingCall(data));
-        this.socket.on('callAnswered', (data) => this.handleCallAnswered(data));
-        this.socket.on('ice-candidate', (data) => this.handleIceCandidate(data));
       }
 
-      copyCode() {
-        navigator.clipboard.writeText(this.userCode);
-        const btn = document.getElementById('copyCode');
-        const original = btn.textContent;
-        btn.textContent = '✅ Copied!';
-        setTimeout(() => btn.textContent = original, 2000);
-      }
-
-      connect() {
-        const code = document.getElementById('friendCode').value.trim().toUpperCase();
-        if (code && code !== this.userCode) {
-          this.socket.emit('joinRoom', code);
-        }
-      }
-
-      showChatScreen() {
-        document.getElementById('homeScreen').classList.remove('active');
-        document.getElementById('chatScreen').classList.add('active');
+      updateUserCount(count) {
+        document.getElementById('userCount').textContent = `${count}/∞`;
       }
 
       sendMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
-        if (text && this.roomId) {
-          this.socket.emit('message', { roomId: this.roomId, text });
+        if (text) {
+          const msg = {
+            id: Date.now(),
+            text,
+            sender: this.userId,
+            timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            type: 'text'
+          };
+          this.socket.emit('message', msg);
           input.value = '';
+          this.socket.emit('typing', false);
         }
       }
 
       sendImage(event) {
         const file = event.target.files[0];
-        if (file && this.roomId) {
+        if (file) {
           const reader = new FileReader();
           reader.onload = (e) => {
-            this.socket.emit('image', { roomId: this.roomId, image: e.target.result });
+            const msg = {
+              id: Date.now(),
+              image: e.target.result,
+              sender: this.userId,
+              timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+              type: 'image'
+            };
+            this.socket.emit('image', msg);
           };
+          reader.readAsDataURL(file);
+        }
+      }
+
+      addMessage(msg, type) {
+        const container = document.getElementById('messagesContainer');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.dataset.messageId = msg.id;
+
+        if (msg.type === 'image') {
+          messageDiv.innerHTML = `
+            <div class="message-bubble">
+              <img src="${msg.image}" class="message-image" onclick="window.open(this.src)">
+              <div class="message-time">${msg.timestamp}</div>
+              ${type === 'sent' ? '<div class="message-actions"><button class="delete-btn" data-message-id="${msg.id}">🗑️</button></div>' : ''}
+            </div>
+          `;
+        } else {
+          messageDiv.innerHTML = `
+            <div class="message-bubble">
+              <div>${msg.text}</div>
+              <div class="message-time">${msg.timestamp}${msg.edited ? ' ✏️' : ''}</div>
+              ${type === 'sent' ? '<div class="message-actions"><button class="edit-btn" data-message-id="${msg.id}">✏️</button><button class="delete-btn" data-message-id="${msg.id}">🗑️</button></div>' : ''}
+            </div>
+          `;
+        }
+
+        container.appendChild(messageDiv);
+        container.scrollTop = container.scrollHeight;
+      }
+
+      deleteMessage(id) {
+        this.socket.emit('deleteMessage', { id });
+      }
+
+      editMessage(id) {
+        const msg = document.querySelector(`[data-message-id="${id}"] .message-bubble div`);
+        const newText = prompt('Edit message:', msg.textContent);
+        if (newText !== null && newText.trim()) {
+          this.socket.emit('editMessage', { id, newText: newText.trim() });
+        }
+      }
+
+      showTyping(typing) {
+        const indicator = document.getElementById('typingIndicator');
+        indicator.style.display = typing ? 'block' : 'none';
+      }
+    }
+
+    // Start chat
+    const chat = new InstantChat();
+  </script>
+</body>
+</html>
