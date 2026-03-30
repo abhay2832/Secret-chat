@@ -3,393 +3,617 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DM Chat - Real User Messaging</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>CodeChat - Connect with Code</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
-            --bg: #000; --bg2: #111; --text: #fff; --text2: #b3b3b3;
-            --accent: #0095f6; --border: #333; --success: #00ff88;
+            --bg: #0a0a0a;
+            --bg2: #1a1a1a;
+            --bg3: #2a2a2a;
+            --text: #ffffff;
+            --text2: #b0b0b0;
+            --accent: #00d4ff;
+            --accent2: #ff6b6b;
+            --success: #00ff88;
+            --border: rgba(255,255,255,0.1);
         }
-        
-        body { 
-            font-family: -apple-system, sans-serif; 
-            background: var(--bg); color: var(--text); 
-            height: 100vh; overflow: hidden;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
         }
-        
-        .container { display: flex; height: 100vh; }
-        
-        /* Login/Signup */
-        .auth-page { 
-            width: 100%; height: 100vh; 
-            display: flex; align-items: center; 
-            justify-content: center; background: linear-gradient(135deg, var(--bg), var(--bg2));
+
+        .app {
+            display: flex;
+            height: 100vh;
         }
-        
-        .auth-card {
-            background: var(--bg2); padding: 40px; 
-            border-radius: 20px; width: 100%; max-width: 400px;
-            border: 1px solid var(--border);
+
+        /* Home Screen */
+        .home-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
         }
-        
-        .auth-title { text-align: center; font-size: 28px; margin-bottom: 30px; }
-        
-        .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; margin-bottom: 8px; font-weight: 500; }
-        .input { 
-            width: 100%; padding: 16px; background: var(--bg); 
-            border: 1px solid var(--border); border-radius: 12px; 
-            color: var(--text); font-size: 16px;
+
+        .logo {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            animation: glow 2s ease-in-out infinite alternate;
         }
-        
-        .btn { 
-            width: 100%; padding: 16px; background: var(--accent); 
-            color: white; border: none; border-radius: 12px; 
-            font-size: 16px; font-weight: 600; cursor: pointer; 
-            transition: background 0.3s;
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px var(--accent)); }
+            to { filter: drop-shadow(0 0 20px var(--accent)); }
         }
-        
-        .btn:hover { background: #1877f2; }
-        .btn-secondary { background: var(--border); }
-        
-        .toggle-auth { text-align: center; margin-top: 20px; }
-        .toggle-auth a { color: var(--accent); text-decoration: none; }
-        
-        /* Main App */
-        .sidebar { 
-            width: 350px; background: var(--bg2); 
-            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+
+        .code-container {
+            background: var(--bg2);
+            padding: 30px 40px;
+            border-radius: 20px;
+            border: 2px solid var(--border);
+            margin: 30px 0;
+            backdrop-filter: blur(20px);
         }
-        
-        .header { 
-            padding: 20px; border-bottom: 1px solid var(--border); 
-            display: flex; align-items: center; gap: 15px;
+
+        .your-code {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: 8px;
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
         }
-        
-        .user-avatar { 
-            width: 45px; height: 45px; border-radius: 50%; 
-            background: linear-gradient(45deg, var(--accent), #ff6b6b); 
-            display: flex; align-items: center; justify-content: center; font-weight: bold;
+
+        .code-label {
+            font-size: 14px;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        
-        .user-info h3 { font-size: 16px; margin-bottom: 2px; }
-        .user-info p { font-size: 14px; color: var(--text2); }
-        
-        .search-box { padding: 20px; }
-        #userSearch { width: 100%; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 25px; color: var(--text); }
-        
-        .chat-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .chat-item { 
-            display: flex; align-items: center; gap: 15px; 
-            padding: 15px; border-radius: 15px; cursor: pointer; 
-            transition: background 0.2s; margin-bottom: 5px;
+
+        .copy-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .copy-btn:hover {
+            background: var(--success);
+            transform: scale(1.05);
+        }
+
+        .connect-section {
+            margin-top: 40px;
+        }
+
+        .connect-input {
+            width: 300px;
+            padding: 18px 24px;
+            background: var(--bg3);
+            border: 2px solid var(--border);
+            border-radius: 25px;
+            color: var(--text);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-align: center;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .connect-btn {
+            background: var(--accent2);
+            color: white;
+            border: none;
+            padding: 18px 36px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .connect-btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        .connect-btn:disabled {
+            background: var(--border);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Chat Screen */
+        .chat-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .chat-header {
+            padding: 25px 40px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .codes-display {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .code-display {
+            text-align: center;
+        }
+
+        .code-display .code-label {
+            font-size: 12px;
+            color: var(--text2);
+            margin-bottom: 5px;
+        }
+
+        .friend-code {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--success);
+            letter-spacing: 4px;
+        }
+
+        .disconnect-btn {
+            background: var(--accent2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .disconnect-btn:hover {
+            background: #ff5252;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+            background-image: 
+                radial-gradient(circle at 25px 25px, rgba(255,255,255,0.05) 2px, transparent 0),
+                radial-gradient(circle at 75px 75px, rgba(255,255,255,0.03) 1px, transparent 0);
+            background-size: 100px 100px;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 25px;
+            animation: messageSlide 0.4s ease-out;
+            max-width: 80%;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.sent {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        .message-bubble {
+            max-width: 100%;
+            padding: 18px 24px;
+            border-radius: 25px;
             position: relative;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
-        
-        .chat-item:hover { background: rgba(255,255,255,0.1); }
-        .chat-item.active { background: rgba(0,149,246,0.2); }
-        
-        .chat-avatar { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(45deg, var(--accent), #ff6b6b); display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .chat-info h4 { font-size: 15px; margin-bottom: 3px; }
-        .chat-preview { font-size: 14px; color: var(--text2); }
-        
-        .online-dot { position: absolute; right: 15px; top: 20px; width: 12px; height: 12px; background: var(--success); border-radius: 50%; border: 2px solid var(--bg2); }
-        
-        /* Chat Area */
-        .chat-main { flex: 1; display: flex; flex-direction: column; }
-        .chat-header { 
-            padding: 20px 25px; border-bottom: 1px solid var(--border); 
-            display: flex; align-items: center; gap: 20px;
+
+        .message.sent .message-bubble {
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            color: white;
+            border-bottom-right-radius: 8px;
         }
-        
-        .chat-back { background: none; border: none; color: var(--text2); font-size: 24px; cursor: pointer; padding: 8px; border-radius: 50%; }
-        .chat-user h2 { font-size: 18px; }
-        .chat-status { font-size: 14px; color: var(--success); }
-        
-        .messages { flex: 1; overflow-y: auto; padding: 30px 25px; background-image: radial-gradient(circle at 20px 20px, rgba(255,255,255,0.05) 1px, transparent 0); background-size: 60px 60px; }
-        
-        .message { display: flex; margin-bottom: 20px; animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .message.sent { justify-content: flex-end; }
-        .message-bubble { 
-            max-width: 65%; padding: 14px 18px; border-radius: 22px; 
-            word-wrap: break-word; position: relative;
+
+        .message.received .message-bubble {
+            background: rgba(255,255,255,0.1);
+            border-bottom-left-radius: 8px;
         }
-        
-        .message.sent .message-bubble { background: var(--accent); color: white; border-bottom-right-radius: 6px; }
-        .message.received .message-bubble { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-bottom-left-radius: 6px; }
-        
-        .message-time { font-size: 12px; opacity: 0.7; margin-top: 5px; }
-        .status { display: flex; align-items: center; gap: 4px; font-size: 12px; margin-left: 8px; }
-        
-        .typing { display: flex; align-items: center; gap: 4px; padding: 14px 18px; background: rgba(255,255,255,0.1); border-radius: 22px; border-bottom-left-radius: 6px; }
-        .typing-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.6); animation: typing 1.4s infinite; }
+
+        .message-time {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        .message-status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 18px 24px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 25px;
+            border-bottom-left-radius: 8px;
+            backdrop-filter: blur(20px);
+            margin-bottom: 25px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.6);
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing { 0%,60%,100% { transform: scale(1); opacity: 0.6; } 30% { transform: scale(1.3); opacity: 1; } }
-        
-        .input-area { 
-            padding: 20px 25px; border-top: 1px solid var(--border); 
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: scale(1); opacity: 0.4; }
+            30% { transform: scale(1.2); opacity: 1; }
+        }
+
+        .input-container {
+            padding: 30px 40px;
             background: var(--bg2);
+            border-top: 1px solid var(--border);
         }
-        
-        .input-wrapper { 
-            display: flex; align-items: flex-end; gap: 12px; 
-            background: var(--bg); border-radius: 28px; padding: 12px 18px; 
-            border: 1px solid var(--border);
+
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            background: var(--bg3);
+            border-radius: 30px;
+            padding: 20px 25px;
+            border: 2px solid var(--border);
+            transition: all 0.3s;
         }
-        
-        .input-wrapper:focus-within { border-color: var(--accent); }
-        
-        .btn-icon, .send-btn { 
-            background: none; border: none; font-size: 20px; 
-            color: var(--text2); cursor: pointer; padding: 8px; 
-            border-radius: 50%; transition: all 0.2s;
+
+        .input-wrapper:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(0,212,255,0.3);
         }
-        
-        .btn-icon:hover { background: rgba(255,255,255,0.1); color: var(--text); }
-        .send-btn { color: var(--accent); font-size: 18px; }
-        .send-btn.active { background: var(--accent); color: white; }
-        
-        #messageInput { 
-            flex: 1; background: none; border: none; 
-            color: var(--text); font-size: 16px; resize: none; 
-            max-height: 100px; outline: none; padding: 4px 0;
+
+        .input-icon {
+            font-size: 22px;
+            color: var(--text2);
+            cursor: pointer;
+            transition: color 0.3s;
         }
-        
-        .hidden { display: none !important; }
-        .online-users { padding: 10px 20px; border-top: 1px solid var(--border); }
-        .online-count { color: var(--text2); font-size: 14px; }
-        
+
+        .input-icon:hover {
+            color: var(--text);
+        }
+
+        #messageInput {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 16px;
+            resize: none;
+            max-height: 120px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        #messageInput::placeholder {
+            color: var(--text2);
+        }
+
+        .send-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--success);
+            transform: scale(1.1);
+        }
+
+        .send-btn:disabled {
+            background: var(--border);
+            cursor: not-allowed;
+        }
+
+        /* Call UI */
+        .call-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            z-index: 1000;
+            display: none;
+        }
+
+        .call-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .remote-video,
+        .local-video {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .local-video {
+            width: 150px;
+            height: 200px;
+            top: 20px;
+            right: 20px;
+            border-radius: 15px;
+            border: 3px solid rgba(255,255,255,0.2);
+        }
+
+        .call-controls {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        .call-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .voice-call-btn {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+        }
+
+        .video-call-btn {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+            color: white;
+        }
+
+        .end-call-btn {
+            background: var(--accent2);
+            color: white;
+            font-size: 28px;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
-            .sidebar { position: fixed; z-index: 100; transform: translateX(-100%); width: 80%; }
-            .sidebar.open { transform: translateX(0); }
-            .chat-main { width: 100vw; }
+            .home-screen {
+                padding: 20px;
+            }
+
+            .connect-input {
+                width: 100%;
+                max-width: 350px;
+            }
+
+            .chat-messages {
+                padding: 20px;
+            }
+
+            .input-container {
+                padding: 20px;
+            }
+
+            .codes-display {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .friend-code {
+                font-size: 20px;
+            }
         }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+        .pulse { animation: pulse 2s infinite; }
     </style>
 </head>
 <body>
-    <!-- Auth Pages -->
-    <div id="authPage">
-        <div class="auth-page">
-            <div class="auth-card">
-                <h1 class="auth-title" id="authTitle">Welcome Back</h1>
-                <form id="authForm">
-                    <div class="input-group">
-                        <label>Username</label>
-                        <input type="text" id="username" class="input" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Email</label>
-                        <input type="email" id="email" class="input" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Password</label>
-                        <input type="password" id="password" class="input" required>
-                    </div>
-                    <button type="submit" class="btn" id="authBtn">Sign In</button>
-                </form>
-                <div class="toggle-auth">
-                    <span id="toggleText">Don't have an account?</span> 
-                    <a href="#" id="toggleAuth">Sign Up</a>
+    <!-- Home Screen -->
+    <div id="homeScreen" class="home-screen">
+        <div class="logo">CodeChat</div>
+        <div class="code-container">
+            <div class="code-label">Your Code</div>
+            <div class="your-code" id="myCode">Generating...</div>
+            <button class="copy-btn" id="copyCodeBtn">Copy Code</button>
+        </div>
+        <div class="connect-section">
+            <input type="text" class="connect-input" id="friendCodeInput" placeholder="Enter Friend Code" maxlength="6">
+            <br>
+            <button class="connect-btn" id="connectBtn">Connect</button>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chatScreen" class="chat-screen hidden">
+        <div class="chat-header">
+            <div class="codes-display">
+                <div class="code-display">
+                    <div class="code-label">You</div>
+                    <div class="your-code" id="chatMyCode">-</div>
                 </div>
+                <div class="code-display">
+                    <div class="code-label">Friend</div>
+                    <div class="friend-code" id="chatFriendCode">-</div>
+                </div>
+            </div>
+            <button class="disconnect-btn" id="disconnectBtn">Disconnect</button>
+        </div>
+        
+        <div class="chat-messages" id="messages"></div>
+        
+        <div class="input-container">
+            <div class="input-wrapper">
+                <div class="input-icon" id="voiceCallBtn">📞</div>
+                <div class="input-icon" id="videoCallBtn">📹</div>
+                <div class="input-icon" id="imageBtn">🖼️</div>
+                <textarea id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+                <button class="send-btn" id="sendBtn" disabled>➤</button>
             </div>
         </div>
     </div>
 
-    <!-- Main App -->
-    <div id="mainApp" class="container hidden">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="header">
-                <div class="user-avatar" id="userAvatar"></div>
-                <div class="user-info">
-                    <h3 id="userName"></h3>
-                    <p>Tap to logout</p>
-                </div>
-            </div>
-            
-            <div class="search-box">
-                <input type="text" id="userSearch" placeholder="Search users...">
-            </div>
-            
-            <div class="chat-list" id="chatList"></div>
-            
-            <div class="online-users">
-                <div class="online-count" id="onlineCount">0 online</div>
-            </div>
-        </div>
-
-        <!-- Chat Main -->
-        <div class="chat-main">
-            <div class="chat-header">
-                <button class="chat-back" id="backBtn">←</button>
-                <div class="chat-user">
-                    <h2 id="chatTitle">Select a user</h2>
-                    <div class="chat-status" id="chatStatus"></div>
-                </div>
-            </div>
-            
-            <div class="messages" id="messages"></div>
-            
-            <div class="input-area">
-                <div class="input-wrapper">
-                    <button class="btn-icon">😊</button>
-                    <button class="btn-icon" id="attachBtn">📎</button>
-                    <textarea id="messageInput" placeholder="Type a message..." rows="1"></textarea>
-                    <button class="send-btn" id="sendBtn">➤</button>
-                </div>
+    <!-- Call Overlay -->
+    <div id="callOverlay" class="call-overlay">
+        <div class="call-container">
+            <video id="remoteVideo" class="remote-video" autoplay playsinline muted></video>
+            <video id="localVideo" class="local-video" autoplay playsinline muted></video>
+            <div class="call-controls">
+                <button class="call-btn voice-call-btn" id="acceptVoiceBtn">✅</button>
+                <button class="call-btn video-call-btn" id="acceptVideoBtn">📹</button>
+                <button class="call-btn end-call-btn" id="endCallBtn">📞</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Global State
-        const state = {
-            socket: null,
-            currentUser: null,
-            currentChat: null,
-            users: {},
-            chats: {},
-            messages: {},
-            peer: null,
-            localStream: null
-        };
-
-        // DOM Elements
-        const els = {
-            authPage: document.getElementById('authPage'),
-            mainApp: document.getElementById('mainApp'),
-            authForm: document.getElementById('authForm'),
-            authTitle: document.getElementById('authTitle'),
-            authBtn: document.getElementById('authBtn'),
-            toggleAuth: document.getElementById('toggleAuth'),
-            toggleText: document.getElementById('toggleText'),
-            username: document.getElementById('username'),
-            email: document.getElementById('email'),
-            password: document.getElementById('password'),
-            sidebar: document.getElementById('sidebar'),
-            userAvatar: document.getElementById('userAvatar'),
-            userName: document.getElementById('userName'),
-            userSearch: document.getElementById('userSearch'),
-            chatList: document.getElementById('chatList'),
-            onlineCount: document.getElementById('onlineCount'),
-            backBtn: document.getElementById('backBtn'),
-            chatTitle: document.getElementById('chatTitle'),
-            chatStatus: document.getElementById('chatStatus'),
-            messages: document.getElementById('messages'),
-            messageInput: document.getElementById('messageInput'),
-            sendBtn: document.getElementById('sendBtn'),
-            attachBtn: document.getElementById('attachBtn')
-        };
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', init);
-
-        function init() {
-            // Connect to Socket.IO server (replace with your server URL)
-            state.socket = io('https://chat-server-abc123.onrender.com'); // Use your deployed server
-            
-            setupEventListeners();
-            setupSocketEvents();
-        }
-
-        function setupEventListeners() {
-            // Auth
-            els.authForm.addEventListener('submit', handleAuth);
-            els.toggleAuth.addEventListener('click', toggleAuthMode);
-            
-            // User clicks
-            els.userName.addEventListener('click', logout);
-            els.userSearch.addEventListener('input', handleUserSearch);
-            
-            // Chat
-            els.backBtn.addEventListener('click', showChatList);
-            els.messageInput.addEventListener('input', handleInput);
-            els.messageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-            els.sendBtn.addEventListener('click', sendMessage);
-            
-            // Auto-resize textarea
-            els.messageInput.addEventListener('input', autoResize);
-        }
-
-        function toggleAuthMode(e) {
-            e.preventDefault();
-            const isLogin = els.authTitle.textContent.includes('Welcome');
-            
-            if (isLogin) {
-                els.authTitle.textContent = 'Sign Up';
-                els.authBtn.textContent = 'Sign Up';
-                els.toggleText.textContent = 'Already have an account?';
-                els.toggleAuth.textContent = 'Sign In';
-                els.username.required = true;
-                els.email.required = true;
-            } else {
-                els.authTitle.textContent = 'Welcome Back';
-                els.authBtn.textContent = 'Sign In';
-                els.toggleText.textContent = "Don't have an account?";
-                els.toggleAuth.textContent = 'Sign Up';
-                els.username.required = true;
-                els.email.required = true;
+        class CodeChat {
+            constructor() {
+                this.socket = io('wss://codechat-server.onrender.com'); // Replace with your server
+                this.myCode = this.generateCode();
+                this.friendCode = null;
+                this.peer = null;
+                this.currentCall = null;
+                this.localStream = null;
+                
+                this.init();
             }
-        }
 
-        async function handleAuth(e) {
-            e.preventDefault();
-            const username = els.username.value.trim();
-            const email = els.email.value.trim();
-            const password = els.password.value;
-            
-            if (!username || !email || !password) return alert('Please fill all fields');
-            
-            const isLogin = els.authTitle.textContent.includes('Welcome');
-            
-            try {
-                const response = await fetch('https://chat-server-abc123.onrender.com/api/auth/' + (isLogin ? 'login' : 'register'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password })
+            generateCode() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let code = '';
+                for (let i = 0; i < 6; i++) {
+                    code += chars[Math.floor(Math.random() * chars.length)];
+                }
+                return code;
+            }
+
+            init() {
+                this.bindEvents();
+                this.socket.emit('join', this.myCode);
+                this.updateMyCode();
+                
+                // Auto-generate new code on refresh
+                window.addEventListener('beforeunload', () => {
+                    this.socket.emit('leave', this.myCode);
                 });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    state.currentUser = data.user;
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    showMainApp();
-                } else {
-                    alert(data.message || 'Error occurred');
-                }
-            } catch (error) {
-                alert('Server error. Make sure backend is running!');
             }
-        }
 
-        function showMainApp() {
-            els.authPage.classList.add('hidden');
-            els.mainApp.classList.remove('hidden');
-            
-            updateUserDisplay();
-            state.socket.emit('userOnline', state.currentUser);
-        }
+            bindEvents() {
+                // Home screen
+                document.getElementById('copyCodeBtn').onclick = () => this.copyCode();
+                document.getElementById('connectBtn').onclick = () => this.connect();
+                document.getElementById('friendCodeInput').onkeypress = (e) => {
+                    if (e.key === 'Enter') this.connect();
+                };
 
-        function updateUserDisplay() {
-            els.userAvatar.textContent = state.currentUser.username[0].toUpperCase();
-            els.userName.textContent = state.currentUser.username;
-        }
+                // Chat screen
+                document.getElementById('disconnectBtn').onclick = () => this.disconnect();
+                document.getElementById('sendBtn').onclick = () => this.sendMessage();
+                document.getElementById('messageInput').oninput = (e) => this.handleInput(e);
+                document.getElementById('messageInput').onkeypress = (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                };
 
-        function handleUserSearch(e) {
-            const query = e.target.value.toLowerCase();
-            const users
+                // Calls
+                document.getElementById('voiceCallBtn').onclick = () => this.startVoiceCall();
+                document.getElementById('videoCallBtn').onclick = () => this.startVideoCall();
+                document.getElementById('imageBtn').
