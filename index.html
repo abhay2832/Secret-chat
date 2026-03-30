@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeChat - Connect with Code</title>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <title>CodeChat - Instant Messaging</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,22 +17,9 @@
             box-sizing: border-box;
         }
 
-        :root {
-            --bg: #0a0a0a;
-            --bg2: #1a1a1a;
-            --bg3: #2a2a2a;
-            --text: #ffffff;
-            --text2: #b0b0b0;
-            --accent: #00d4ff;
-            --accent2: #ff6b6b;
-            --success: #00ff88;
-            --border: rgba(255,255,255,0.1);
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             height: 100vh;
             overflow: hidden;
         }
@@ -36,200 +27,254 @@
         .app {
             display: flex;
             height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #000;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
         }
 
-        /* Home Screen */
-        .home-screen {
-            flex: 1;
+        /* Sidebar */
+        .sidebar {
+            width: 380px;
+            background: #111;
+            border-right: 1px solid #333;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        }
+
+        .user-info {
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
             text-align: center;
-            padding: 40px;
         }
 
-        .logo {
-            font-size: 48px;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent), var(--success));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
-            animation: glow 2s ease-in-out infinite alternate;
+        .user-code {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
-        @keyframes glow {
-            from { filter: drop-shadow(0 0 10px var(--accent)); }
-            to { filter: drop-shadow(0 0 20px var(--accent)); }
-        }
-
-        .code-container {
-            background: var(--bg2);
-            padding: 30px 40px;
-            border-radius: 20px;
-            border: 2px solid var(--border);
-            margin: 30px 0;
-            backdrop-filter: blur(20px);
-        }
-
-        .your-code {
-            font-size: 36px;
-            font-weight: 800;
-            letter-spacing: 8px;
-            background: linear-gradient(135deg, var(--accent), var(--success));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 15px;
-        }
-
-        .code-label {
-            font-size: 14px;
-            color: var(--text2);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .user-code:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.02);
         }
 
         .copy-btn {
-            background: var(--accent);
-            color: white;
+            background: rgba(255,255,255,0.2);
             border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-weight: 600;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
             cursor: pointer;
-            transition: all 0.3s;
+            margin-top: 10px;
             font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .copy-btn:hover {
-            background: var(--success);
-            transform: scale(1.05);
         }
 
         .connect-section {
-            margin-top: 40px;
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
         }
 
         .connect-input {
-            width: 300px;
-            padding: 18px 24px;
-            background: var(--bg3);
-            border: 2px solid var(--border);
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #333;
             border-radius: 25px;
-            color: var(--text);
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 3px;
-            text-align: center;
-            text-transform: uppercase;
-            margin-bottom: 20px;
+            background: #222;
+            color: white;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .connect-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
         }
 
         .connect-btn {
-            background: var(--accent2);
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border: none;
-            padding: 18px 36px;
             border-radius: 25px;
             font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .connect-btn:hover {
-            background: #ff5252;
-            transform: translateY(-2px);
-        }
-
-        .connect-btn:disabled {
-            background: var(--border);
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Chat Screen */
-        .chat-screen {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .chat-header {
-            padding: 25px 40px;
-            background: var(--bg2);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .codes-display {
-            display: flex;
-            gap: 30px;
-            align-items: center;
-        }
-
-        .code-display {
-            text-align: center;
-        }
-
-        .code-display .code-label {
-            font-size: 12px;
-            color: var(--text2);
-            margin-bottom: 5px;
-        }
-
-        .friend-code {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--success);
-            letter-spacing: 4px;
-        }
-
-        .disconnect-btn {
-            background: var(--accent2);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
         }
 
-        .disconnect-btn:hover {
-            background: #ff5252;
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
         }
 
-        .chat-messages {
+        .recent-chats {
+            margin-top: 20px;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            cursor: pointer;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .chat-item:hover, .chat-item.active {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            margin-right: 15px;
+        }
+
+        .chat-info h4 {
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .chat-status {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .online-status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        /* Chat Window */
+        .chat-window {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: #111;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+        }
+
+        .chat-partner {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .partner-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .partner-info h3 {
+            color: white;
+            margin-bottom: 2px;
+        }
+
+        .partner-status {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .call-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .call-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .voice-call {
+            background: #28a745;
+            color: white;
+        }
+
+        .video-call {
+            background: #007bff;
+            color: white;
+        }
+
+        .call-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 20px;
             overflow-y: auto;
-            padding: 40px;
-            background-image: 
-                radial-gradient(circle at 25px 25px, rgba(255,255,255,0.05) 2px, transparent 0),
-                radial-gradient(circle at 75px 75px, rgba(255,255,255,0.03) 1px, transparent 0);
-            background-size: 100px 100px;
+            background: #000;
         }
 
         .message {
             display: flex;
-            margin-bottom: 25px;
-            animation: messageSlide 0.4s ease-out;
-            max-width: 80%;
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out;
         }
 
-        @keyframes messageSlide {
+        @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -238,382 +283,376 @@
         }
 
         .message.sent {
-            margin-left: auto;
-            flex-direction: row-reverse;
+            justify-content: flex-end;
+        }
+
+        .message.received {
+            justify-content: flex-start;
         }
 
         .message-bubble {
-            max-width: 100%;
-            padding: 18px 24px;
-            border-radius: 25px;
+            max-width: 60%;
+            padding: 12px 18px;
+            border-radius: 20px;
             position: relative;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            word-wrap: break-word;
         }
 
         .message.sent .message-bubble {
-            background: linear-gradient(135deg, var(--accent), var(--success));
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            border-bottom-right-radius: 8px;
+            border-bottom-right-radius: 5px;
         }
 
         .message.received .message-bubble {
-            background: rgba(255,255,255,0.1);
-            border-bottom-left-radius: 8px;
+            background: #333;
+            color: white;
+            border-bottom-left-radius: 5px;
         }
 
         .message-time {
-            font-size: 12px;
+            font-size: 11px;
             opacity: 0.7;
-            margin-top: 8px;
+            margin-top: 5px;
         }
 
         .message-status {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
             font-size: 12px;
-            margin-top: 4px;
+            margin-left: 10px;
         }
 
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: currentColor;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 18px 24px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 25px;
-            border-bottom-left-radius: 8px;
-            backdrop-filter: blur(20px);
-            margin-bottom: 25px;
-        }
-
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.6);
-            animation: typing 1.4s infinite ease-in-out;
-        }
-
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typing {
-            0%, 60%, 100% { transform: scale(1); opacity: 0.4; }
-            30% { transform: scale(1.2); opacity: 1; }
-        }
-
-        .input-container {
-            padding: 30px 40px;
-            background: var(--bg2);
-            border-top: 1px solid var(--border);
-        }
-
-        .input-wrapper {
-            display: flex;
-            align-items: flex-end;
-            gap: 15px;
-            background: var(--bg3);
-            border-radius: 30px;
-            padding: 20px 25px;
-            border: 2px solid var(--border);
-            transition: all 0.3s;
-        }
-
-        .input-wrapper:focus-within {
-            border-color: var(--accent);
-            box-shadow: 0 0 20px rgba(0,212,255,0.3);
-        }
-
-        .input-icon {
-            font-size: 22px;
-            color: var(--text2);
+        .message-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 15px;
             cursor: pointer;
-            transition: color 0.3s;
         }
 
-        .input-icon:hover {
-            color: var(--text);
-        }
-
-        #messageInput {
-            flex: 1;
-            background: none;
-            border: none;
-            color: var(--text);
-            font-size: 16px;
-            resize: none;
-            max-height: 120px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        #messageInput::placeholder {
-            color: var(--text2);
-        }
-
-        .send-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            width: 50px;
-            height: 50px;
+        .message-actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.8);
             border-radius: 50%;
-            font-size: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
+            width: 25px;
+            height: 25px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
-        .send-btn:hover:not(:disabled) {
-            background: var(--success);
+        .message-bubble:hover .message-actions {
+            opacity: 1;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: #111;
+            border-top: 1px solid #333;
+        }
+
+        .message-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .emoji-btn, .attach-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            background: #333;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .emoji-btn:hover, .attach-btn:hover {
+            background: #444;
+            transform: scale(1.05);
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #333;
+            border-radius: 25px;
+            background: #222;
+            color: white;
+            font-size: 16px;
+            resize: none;
+            max-height: 120px;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover {
             transform: scale(1.1);
         }
 
         .send-btn:disabled {
-            background: var(--border);
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
-        /* Call UI */
+        .typing-indicator {
+            padding: 12px 18px;
+            color: #888;
+            font-style: italic;
+        }
+
+        .no-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            text-align: center;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
         .call-overlay {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: #000;
-            z-index: 1000;
-            display: none;
-        }
-
-        .call-container {
-            position: relative;
             width: 100%;
             height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            color: white;
         }
 
-        .remote-video,
-        .local-video {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .local-video {
-            width: 150px;
+        .local-video, .remote-video {
+            width: 300px;
             height: 200px;
-            top: 20px;
-            right: 20px;
+            background: #333;
             border-radius: 15px;
-            border: 3px solid rgba(255,255,255,0.2);
+            margin: 10px;
         }
 
         .call-controls {
-            position: absolute;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
             display: flex;
             gap: 20px;
+            margin-top: 30px;
         }
 
-        .call-btn {
-            width: 70px;
-            height: 70px;
+        .end-call {
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
+            background: #dc3545;
             border: none;
+            color: white;
             font-size: 24px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-        }
-
-        .voice-call-btn {
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
-            color: white;
-        }
-
-        .video-call-btn {
-            background: linear-gradient(135deg, #43e97b, #38f9d7);
-            color: white;
-        }
-
-        .end-call-btn {
-            background: var(--accent2);
-            color: white;
-            font-size: 28px;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .home-screen {
-                padding: 20px;
-            }
-
-            .connect-input {
-                width: 100%;
-                max-width: 350px;
-            }
-
-            .chat-messages {
-                padding: 20px;
-            }
-
-            .input-container {
-                padding: 20px;
-            }
-
-            .codes-display {
+            .app {
                 flex-direction: column;
-                gap: 15px;
             }
-
-            .friend-code {
-                font-size: 20px;
+            .sidebar {
+                width: 100%;
+                height: 50vh;
+            }
+            .chat-window {
+                height: 50vh;
             }
         }
 
-        /* Utilities */
-        .hidden { display: none !important; }
-        .pulse { animation: pulse 2s infinite; }
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #666;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
-    <!-- Home Screen -->
-    <div id="homeScreen" class="home-screen">
-        <div class="logo">CodeChat</div>
-        <div class="code-container">
-            <div class="code-label">Your Code</div>
-            <div class="your-code" id="myCode">Generating...</div>
-            <button class="copy-btn" id="copyCodeBtn">Copy Code</button>
-        </div>
-        <div class="connect-section">
-            <input type="text" class="connect-input" id="friendCodeInput" placeholder="Enter Friend Code" maxlength="6">
-            <br>
-            <button class="connect-btn" id="connectBtn">Connect</button>
-        </div>
-    </div>
+    <div id="root"></div>
 
-    <!-- Chat Screen -->
-    <div id="chatScreen" class="chat-screen hidden">
-        <div class="chat-header">
-            <div class="codes-display">
-                <div class="code-display">
-                    <div class="code-label">You</div>
-                    <div class="your-code" id="chatMyCode">-</div>
-                </div>
-                <div class="code-display">
-                    <div class="code-label">Friend</div>
-                    <div class="friend-code" id="chatFriendCode">-</div>
-                </div>
-            </div>
-            <button class="disconnect-btn" id="disconnectBtn">Disconnect</button>
-        </div>
-        
-        <div class="chat-messages" id="messages"></div>
-        
-        <div class="input-container">
-            <div class="input-wrapper">
-                <div class="input-icon" id="voiceCallBtn">📞</div>
-                <div class="input-icon" id="videoCallBtn">📹</div>
-                <div class="input-icon" id="imageBtn">🖼️</div>
-                <textarea id="messageInput" placeholder="Type a message..." rows="1"></textarea>
-                <button class="send-btn" id="sendBtn" disabled>➤</button>
-            </div>
-        </div>
-    </div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
 
-    <!-- Call Overlay -->
-    <div id="callOverlay" class="call-overlay">
-        <div class="call-container">
-            <video id="remoteVideo" class="remote-video" autoplay playsinline muted></video>
-            <video id="localVideo" class="local-video" autoplay playsinline muted></video>
-            <div class="call-controls">
-                <button class="call-btn voice-call-btn" id="acceptVoiceBtn">✅</button>
-                <button class="call-btn video-call-btn" id="acceptVideoBtn">📹</button>
-                <button class="call-btn end-call-btn" id="endCallBtn">📞</button>
-            </div>
-        </div>
-    </div>
+        // Main App Component
+        function App() {
+            const [userCode, setUserCode] = useState('');
+            const [socket, setSocket] = useState(null);
+            const [currentChat, setCurrentChat] = useState(null);
+            const [recentChats, setRecentChats] = useState([]);
+            const [messages, setMessages] = useState([]);
+            const [newMessage, setNewMessage] = useState('');
+            const [typing, setTyping] = useState(false);
+            const [onlineStatus, setOnlineStatus] = useState({});
+            const [showNotification, setShowNotification] = useState(false);
+            const [notificationMsg, setNotificationMsg] = useState('');
+            const [isDarkMode, setIsDarkMode] = useState(true);
+            const [imagePreview, setImagePreview] = useState(null);
+            const [callState, setCallState] = useState(null);
+            const [localStream, setLocalStream] = useState(null);
+            const [remoteStream, setRemoteStream] = useState(null);
+            const peerRef = useRef(null);
+            const messagesEndRef = useRef(null);
 
-    <script>
-        class CodeChat {
-            constructor() {
-                this.socket = io('wss://codechat-server.onrender.com'); // Replace with your server
-                this.myCode = this.generateCode();
-                this.friendCode = null;
-                this.peer = null;
-                this.currentCall = null;
-                this.localStream = null;
-                
-                this.init();
-            }
+            // Generate unique user code
+            useEffect(() => {
+                const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+                setUserCode(code);
+                localStorage.setItem('userCode', code);
+            }, []);
 
-            generateCode() {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                let code = '';
-                for (let i = 0; i < 6; i++) {
-                    code += chars[Math.floor(Math.random() * chars.length)];
-                }
-                return code;
-            }
+            // Initialize Socket connection
+            useEffect(() => {
+                const newSocket = io('https://chat-server-7k9p2.onrender.com');
+                setSocket(newSocket);
 
-            init() {
-                this.bindEvents();
-                this.socket.emit('join', this.myCode);
-                this.updateMyCode();
-                
-                // Auto-generate new code on refresh
-                window.addEventListener('beforeunload', () => {
-                    this.socket.emit('leave', this.myCode);
+                newSocket.on('connect', () => {
+                    newSocket.emit('register', userCode);
                 });
-            }
 
-            bindEvents() {
-                // Home screen
-                document.getElementById('copyCodeBtn').onclick = () => this.copyCode();
-                document.getElementById('connectBtn').onclick = () => this.connect();
-                document.getElementById('friendCodeInput').onkeypress = (e) => {
-                    if (e.key === 'Enter') this.connect();
-                };
+                newSocket.on('user-online', (data) => {
+                    setOnlineStatus(prev => ({ ...prev, [data.code]: true }));
+                });
 
-                // Chat screen
-                document.getElementById('disconnectBtn').onclick = () => this.disconnect();
-                document.getElementById('sendBtn').onclick = () => this.sendMessage();
-                document.getElementById('messageInput').oninput = (e) => this.handleInput(e);
-                document.getElementById('messageInput').onkeypress = (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        this.sendMessage();
+                newSocket.on('user-offline', (data) => {
+                    setOnlineStatus(prev => ({ ...prev, [data.code]: false }));
+                });
+
+                newSocket.on('message', (data) => {
+                    if (data.to === userCode || data.from === userCode) {
+                        setMessages(prev => [...prev, { ...data, id: Date.now() }]);
+                        if (data.to === userCode && currentChat !== data.from) {
+                            showNotification(`New message from ${data.from}`);
+                            setRecentChats(prev => {
+                                const exists = prev.find(c => c.code === data.from);
+                                if (exists) {
+                                    return prev.map(c => 
+                                        c.code === data.from 
+                                            ? { ...c, lastMessage: data.text, timestamp: Date.now() }
+                                            : c
+                                    );
+                                }
+                                return [{ code: data.from, lastMessage: data.text, timestamp: Date.now() }, ...prev];
+                            });
+                        }
                     }
-                };
+                });
 
-                // Calls
-                document.getElementById('voiceCallBtn').onclick = () => this.startVoiceCall();
-                document.getElementById('videoCallBtn').onclick = () => this.startVideoCall();
-                document.getElementById('imageBtn').
+                newSocket.on('typing', (data) => {
+                    if (data.to === userCode && data.from === currentChat) {
+                        setTyping(true);
+                        setTimeout(() => setTyping(false), 2000);
+                    }
+                });
+
+                newSocket.on('chat-joined', (data) => {
+                    if (data.code === userCode) {
+                        setRecentChats(prev => {
+                            if (!prev.find(c => c.code === data.partner)) {
+                                return [...prev, { code: data.partner, timestamp: Date.now() }];
+                            }
+                            return prev;
+                        });
+                    }
+                });
+
+                return () => {
+                    newSocket.disconnect();
+                };
+            }, [userCode, currentChat]);
+
+            // WebRTC Setup
+            useEffect(() => {
+                peerRef.current = new Peer(userCode, {
+                    host: 'peerjs-server-7k9p2.onrender.com',
+                    secure: true,
+                    port: 443
+                });
+
+                peerRef.current.on('call', (call) => {
+                    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                        .then(stream => {
+                            setLocalStream(stream);
+                            call.answer(stream);
+                            call.on('stream', (remoteStream) => {
+                                setRemoteStream(remoteStream);
+                            });
+                        });
+                });
+            }, [userCode]);
+
+            const scrollToBottom = useCallback(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, []);
+
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages, scrollToBottom]);
+
+            const copyCode = () => {
+                navigator.clipboard.writeText(userCode);
+                showNotification('Code copied!');
+            };
+
+            const connectToUser = (code) => {
+                if (code === userCode || recentChats.find(c => c.code === code)) {
+                    setCurrentChat(code);
+                    return;
+                }
