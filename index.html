@@ -76,22 +76,39 @@
             box-shadow: 0 12px 40px rgba(0,0,0,0.15);
         }
 
-        .join-btn {
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .join-btn, .create-btn {
             padding: 1rem 2rem;
             font-size: 1.1rem;
             font-weight: 600;
-            background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .join-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
             box-shadow: 0 8px 32px rgba(76,175,80,0.3);
         }
 
-        .join-btn:hover {
+        .create-btn {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            box-shadow: 0 8px 32px rgba(33,150,243,0.3);
+        }
+
+        .join-btn:hover, .create-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(76,175,80,0.4);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
         }
 
         /* Chat Interface */
@@ -137,6 +154,7 @@
 
         .status.connected { background: rgba(76,175,80,0.2); color: #4CAF50; }
         .status.disconnected { background: rgba(244,67,54,0.2); color: #f44336; }
+        .status.connecting { background: rgba(255,193,7,0.2); color: #ff9800; }
 
         .video-btn, .call-btn {
             width: 50px;
@@ -348,6 +366,7 @@
             .video-container { flex-direction: column; }
             video { width: 100%; height: 250px; }
             .local-video { position: static; width: 100px; height: 80px; }
+            .btn-group { flex-direction: column; align-items: center; }
         }
 
         /* Scrollbar */
@@ -371,12 +390,15 @@
         <div class="welcome-screen" id="welcomeScreen">
             <div class="logo">🔐 SecureChat</div>
             <p style="color: white; font-size: 1.2rem; margin-bottom: 2rem; max-width: 400px;">
-                Enter a room code to start a private, encrypted chat with video calling
+                Create or join a private room for encrypted chat & video calling
             </p>
-            <input type="text" class="room-input" id="roomInput" placeholder="e.g. MOTOROLA" maxlength="20">
-            <button class="join-btn" onclick="joinRoom()">Join Room</button>
-            <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 1rem;">
-                Share this code with your friend
+            <input type="text" class="room-input" id="roomInput" placeholder="Enter room code (e.g. MOTOROLA)" maxlength="20">
+            <div class="btn-group">
+                <button class="join-btn" onclick="chatApp.createRoom()">Create Room</button>
+                <button class="join-btn" onclick="chatApp.joinRoom()">Join Room</button>
+            </div>
+            <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">
+                Room codes are case-insensitive
             </p>
         </div>
 
@@ -385,25 +407,30 @@
             <div class="chat-header">
                 <div class="room-info">
                     <div class="room-code" id="roomCode"></div>
-                    <div class="status" id="connectionStatus">Connecting...</div>
+                    <div class="status connecting" id="connectionStatus">Connecting...</div>
                 </div>
                 <div>
-                    <button class="video-btn" id="videoBtn" title="Video Call">📹</button>
-                    <button class="call-btn" id="callBtn" title="Voice Call">📞</button>
+                    <button class="video-btn" id="videoBtn" title="Video Call" disabled>📹</button>
+                    <button class="call-btn" id="callBtn" title="Voice Call" disabled>📞</button>
                 </div>
             </div>
-            <div class="messages-container" id="messagesContainer"></div>
+            <div class="messages-container" id="messagesContainer">
+                <div style="text-align: center; color: #666; padding: 2rem;">
+                    Welcome to <strong id="roomCodeWelcome"></strong>!<br>
+                    Waiting for another user to join...
+                </div>
+            </div>
             <div class="input-container">
                 <button class="emoji-btn" id="emojiBtn" title="Emojis">😊</button>
                 <button class="file-btn" id="fileBtn" title="Send Image">📷</button>
-                <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
-                <button class="send-btn" id="sendBtn">➤</button>
+                <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1" disabled></textarea>
+                <button class="send-btn" id="sendBtn" disabled>➤</button>
             </div>
         </div>
 
         <!-- Video Call Overlay -->
         <div class="video-overlay" id="videoOverlay">
-            <div class="video-container">
+            <div style="position: relative;">
                 <video id="remoteVideo" autoplay playsinline muted></video>
                 <video id="localVideo" autoplay playsinline muted class="local-video"></video>
             </div>
@@ -424,25 +451,29 @@
                 this.isVideoCallActive = false;
                 this.roomCode = '';
                 this.encryptionKey = null;
-                this.messageEditMode = null;
+                this.peerId = null;
+                this.isConnected = false;
 
                 this.init();
             }
 
-            init() {
+            async init() {
+                await this.generateEncryptionKey();
                 this.setupEventListeners();
-                this.generateEncryptionKey();
+                console.log('SecureChat initialized');
             }
 
-            generateEncryptionKey() {
-                // Generate a 256-bit AES key for encryption
-                window.crypto.subtle.generateKey(
-                    { name: 'AES-GCM', length: 256 },
-                    true,
-                    ['encrypt', 'decrypt']
-                ).then(key => {
-                    this.encryptionKey = key;
-                });
+            async generateEncryptionKey() {
+                try {
+                    this.encryptionKey = await window.crypto.subtle.generateKey(
+                        { name: 'AES-GCM', length: 256 },
+                        true,
+                        ['encrypt', 'decrypt']
+                    );
+                    console.log('Encryption key generated');
+                } catch (error) {
+                    console.error('Failed to generate encryption key:', error);
+                }
             }
 
             async encryptMessage(message) {
@@ -453,7 +484,7 @@
                 const data = encoder.encode(message);
                 
                 const encrypted = await window.crypto.subtle.encrypt(
-                    { name: 'AES-GCM', iv: iv },
+                    { name: 'AES-GCM', iv },
                     this.encryptionKey,
                     data
                 );
@@ -462,38 +493,37 @@
                 combined.set(iv, 0);
                 combined.set(new Uint8Array(encrypted), iv.length);
                 
-                return btoa(String.fromCharCode(...combined));
+                return btoa(String.fromCharCode.apply(null, combined));
             }
 
             async decryptMessage(encryptedData) {
                 if (!this.encryptionKey) throw new Error('Encryption key not ready');
                 
-                const binary = atob(encryptedData);
-                const bytes = new Uint8Array(binary.length);
-                for (let i = 0; i < binary.length; i++) {
-                    bytes[i] = binary.charCodeAt(i);
+                try {
+                    const binaryString = atob(encryptedData);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    
+                    const iv = bytes.slice(0, 12);
+                    const data = bytes.slice(12);
+                    
+                    const decrypted = await window.crypto.subtle.decrypt(
+                        { name: 'AES-GCM', iv },
+                        this.encryptionKey,
+                        data
+                    );
+                    
+                    const decoder = new TextDecoder();
+                    return decoder.decode(decrypted);
+                } catch (error) {
+                    console.error('Decryption failed:', error);
+                    return '[Decryption failed]';
                 }
-                
-                const iv = bytes.slice(0, 12);
-                const data = bytes.slice(12);
-                
-                const decrypted = await window.crypto.subtle.decrypt(
-                    { name: 'AES-GCM', iv: iv },
-                    this.encryptionKey,
-                    data
-                );
-                
-                const decoder = new TextDecoder();
-                return decoder.decode(decrypted);
             }
 
             setupEventListeners() {
-                // Room join
-                document.getElementById('roomInput').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.joinRoom();
-                });
-
-                // Message input
                 const messageInput = document.getElementById('messageInput');
                 messageInput.addEventListener('input', this.autoResize.bind(this));
                 messageInput.addEventListener('keypress', (e) => {
@@ -503,35 +533,5 @@
                     }
                 });
 
-                // Buttons
                 document.getElementById('sendBtn').addEventListener('click', () => this.sendMessage());
-                document.getElementById('fileBtn').addEventListener('click', () => this.selectFile());
-                document.getElementById('emojiBtn').addEventListener('click', () => this.toggleEmojiPicker());
-                document.getElementById('endCallBtn').addEventListener('click', () => this.endCall());
-                document.getElementById('videoBtn').addEventListener('click', () => this.startVideoCall());
-                document.getElementById('callBtn').addEventListener('click', () => this.startVoiceCall());
-            }
-
-            joinRoom() {
-                const roomInput = document.getElementById('roomInput');
-                this.roomCode = roomInput.value.trim().toUpperCase();
-                
-                if (!this.roomCode) {
-                    alert('Please enter a room code');
-                    return;
-                }
-
-                document.getElementById('welcomeScreen').style.display = 'none';
-                document.getElementById('chatContainer').style.display = 'flex';
-                document.getElementById('roomCode').textContent = this.roomCode;
-
-                this.initPeer();
-            }
-
-            initPeer() {
-                this.peer = new Peer(undefined, {
-                    host: 'peerjs-server.herokuapp.com',
-                    secure: true,
-                    config: {
-                        iceServers: [
-                            { urls: 'stun:stun.l.google.com:
+                document.getElementBy
