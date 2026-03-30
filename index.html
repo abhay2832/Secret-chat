@@ -3,209 +3,296 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quick DM - Instagram Chat</title>
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <title>WhatsApp Clone - Real Time</title>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,height:100vh;background:#000;color:#fff;overflow:hidden}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;height:100vh;background:#111827;overflow:hidden}
     
-    .screen{display:none;height:100vh;flex-direction:column}
-    .screen.active{display:flex}
+    .app{display:flex;height:100vh}
     
-    /* HOME */
-    #home{background:linear-gradient(135deg,#1e3c72,#2a5298);justify-content:center;align-items:center;padding:40px;text-align:center}
-    .logo{font-size:3rem;margin-bottom:30px}
-    .connect-btn{background:linear-gradient(135deg,#f093fb,#f5576c);color:white;border:none;padding:20px 40px;border-radius:50px;font-size:1.2rem;cursor:pointer;transition:all .3s;font-weight:600;margin:20px 0;transform:scale(1)}
-    .connect-btn:hover{transform:scale(1.05);box-shadow:0 10px 30px rgba(240,147,251,.4)}
-    .status{font-size:1.1rem;margin:20px 0;color:#ddd}
+    /* SIDEBAR */
+    .sidebar{width:30%;background:#202c33;border-right:1px solid #2a3942;flex-shrink:0}
+    .sidebar-header{padding:15px;background:#202c33;border-bottom:1px solid #2a3942;display:flex;align-items:center;gap:15px}
+    .profile{position:relative}
+    .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#25d366,#128c7e);display:flex;align-items:center;justify-content:center;color:white;font-weight:600}
+    .status-badge{position:absolute;bottom:0;right:0;width:12px;height:12px;background:#25d366;border:2px solid #202c33;border-radius:50%}
+    
+    .search-box{background:#2a3942;border:none;border-radius:8px;padding:10px 15px;margin:15px;width:100%;color:#e9edef}
+    .search-box::placeholder{color:#8696a0}
+    
+    .chats-list{padding:0 15px;overflow-y:auto;height:calc(100% - 140px)}
+    .chat-item{padding:15px;cursor:pointer;border-bottom:1px solid #2a3942;transition:all .2s;display:flex;align-items:center;gap:15px}
+    .chat-item:hover{background:#2a3942}
+    .chat-item.active{background:#2a3942}
+    .chat-avatar{width:50px;height:50px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;color:white;font-weight:600}
+    .chat-info{flex:1;min-width:0}
+    .chat-name{font-weight:600;color:#e9edef}
+    .chat-last-msg{color:#8696a0;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .chat-time{font-size:.75rem;color:#8696a0}
     
     /* CHAT */
-    #chatScreen{background:#000}
-    .header{padding:20px;background:rgba(0,0,0,.9);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333}
-    .friend-name{font-size:1.2rem;font-weight:600}
-    .online{font-size:.8rem;color:#4ade80}
+    .chat-main{flex:1;display:flex;flex-direction:column;background:#0b141a}
+    .chat-header{padding:15px 20px;background:#202c33;border-bottom:1px solid #2a3942;display:flex;align-items:center;gap:15px}
+    .chat-back{display:none}
+    .chat-profile{position:relative}
+    .chat-status{font-size:.8rem;color:#25d366;margin-top:2px}
     
-    .messages{flex:1;overflow-y:auto;padding:20px;background:#000}
-    .message{margin-bottom:15px;display:flex;animation:slideIn .3s}
+    .messages-container{flex:1;overflow-y:auto;padding:20px;background-image:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="%23ffffff" opacity="0.03"/><circle cx="75" cy="75" r="1" fill="%23ffffff" opacity="0.03"/><circle cx="25" cy="75" r="0.5" fill="%23ffffff" opacity="0.02"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');background-size:100px}
+    
+    .message{margin-bottom:25px;display:flex;animation:slideIn .3s ease}
     .message.sent{justify-content:flex-end}
-    .bubble{max-width:70%;padding:12px 16px;border-radius:20px;position:relative}
-    .sent .bubble{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-bottom-right-radius:5px}
-    .received .bubble{background:rgba(255,255,255,.1);color:white;border-bottom-left-radius:5px}
-    .time{font-size:.7rem;opacity:.7;margin-top:5px}
-    .image{max-width:200px;border-radius:15px;cursor:pointer}
+    .message.received{justify-content:flex-start}
+    .bubble{max-width:60%;padding:10px 15px;border-radius:18px;position:relative}
+    .sent .bubble{background:#005c4b;color:white;border-bottom-right-radius:5px}
+    .received .bubble{background:#ffffff24;color:white;border-bottom-left-radius:5px;backdrop-filter:blur(10px)}
+    .message-text{word-wrap:break-word}
+    .message-time{font-size:.7rem;opacity:.8;margin-left:5px}
+    .message-image{max-width:250px;border-radius:12px;cursor:pointer}
+    .double-check{margin-left:3px;color:#53bdeb}
     
-    .typing{padding:10px 20px;color:#aaa;font-style:italic;font-size:.9rem;display:none}
+    .typing-indicator{display:flex;align-items:center;gap:5px;padding:10px;color:#8696a0;font-style:italic;display:none}
+    .typing-dot{animation:typing 1.4s infinite}
+    .typing-dot:nth-child(2){animation-delay:.2s}
+    .typing-dot:nth-child(3){animation-delay:.4s}
     
-    .input-area{padding:20px;background:rgba(0,0,0,.9);display:flex;gap:10px;align-items:center}
-    #messageInput{flex:1;background:rgba(255,255,255,.1);border:none;border-radius:25px;padding:15px 20px;color:white;font-size:1rem}
-    #sendBtn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:25px;padding:15px 20px;cursor:pointer;font-size:1rem;transition:all .3s}
-    #sendBtn:hover{transform:scale(1.05)}
-    .photo-btn{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.2);color:white;border:none;cursor:pointer;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
-    
-    .call-btns{display:flex;gap:10px}
-    .call-btn{width:45px;height:45px;border-radius:50%;border:none;background:rgba(255,255,255,.2);color:white;font-size:1.1rem;cursor:pointer;transition:all .3s}
-    .call-btn:hover{background:rgba(255,255,255,.3);transform:scale(1.1)}
+    .input-area{padding:15px 20px;background:#202c33;border-top:1px solid #2a3942;display:flex;align-items:flex-end;gap:10px}
+    .emoji-btn,.attach-btn{width:45px;height:45px;border-radius:50%;border:none;background:#2a3942;color:#e9edef;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:all .2s}
+    .emoji-btn:hover,.attach-btn:hover{background:#404f5a}
+    #messageInput{flex:1;max-height:120px;min-height:45px;background:#2a3942;border:none;border-radius:25px;padding:12px 18px;color:#e9edef;font-size:1rem;resize:none;overflow-y:auto}
+    #messageInput::placeholder{color:#8696a0}
+    #sendBtn{width:45px;height:45px;border-radius:50%;border:none;background:#005c4b;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:all .2s}
+    #sendBtn:hover{background:#006d5b}
+    #sendBtn:disabled{opacity:.5;cursor:not-allowed}
     
     @keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-10px)}}
+    
+    @media(max-width:768px){
+      .app{display:block}
+      .sidebar{position:fixed;left:-100%;width:80%;z-index:1000;height:100vh;transition:left .3s}
+      .sidebar.open{left:0}
+      .chat-main{width:100%}
+      .chat-back{display:block;color:#e9edef;font-size:1.5rem;cursor:pointer}
+    }
   </style>
 </head>
 <body>
-  <!-- HOME SCREEN -->
-  <div id="home" class="screen active">
-    <div class="logo">💬 Quick DM</div>
-    <p style="margin-bottom:20px;font-size:1.2rem">Instagram jaisa chat - bina login!</p>
-    <button class="connect-btn" id="connectBtn">🚀 Friend se Connect Karo</button>
-    <div class="status" id="status">Ready to chat...</div>
-  </div>
-
-  <!-- CHAT SCREEN -->
-  <div id="chatScreen" class="screen">
-    <div class="header">
-      <div>
-        <div class="friend-name" id="friendName">Friend</div>
-        <div class="online" id="onlineStatus">Connecting...</div>
+  <div class="app">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="profile">
+          <div class="avatar">U</div>
+          <div class="status-badge"></div>
+        </div>
+        <div>
+          <div style="font-weight:600">Your Name</div>
+          <div style="font-size:.8rem;color:#8696a0">Online</div>
+        </div>
       </div>
-      <div class="call-btns">
-        <button class="call-btn" id="voiceCall" title="Voice Call">📞</button>
-        <button class="call-btn" id="videoCall" title="Video Call">🎥</button>
-      </div>
-    </div>
-    
-    <div class="messages" id="messages">
-      <div class="message received">
-        <div class="bubble">
-          <div>✨ Friend connected! Chat shuru karo!</div>
-          <div class="time">Abhi</div>
+      <input type="text" class="search-box" placeholder="Search or start new chat">
+      
+      <div class="chats-list">
+        <div class="chat-item active" data-chat="main">
+          <div class="chat-avatar">F</div>
+          <div class="chat-info">
+            <div class="chat-name">Friend Chat</div>
+            <div class="chat-last-msg">Online now</div>
+          </div>
+          <div class="chat-time">12:45</div>
         </div>
       </div>
     </div>
-    
-    <div class="typing" id="typing">Typing...</div>
-    
-    <div class="input-area">
-      <button class="photo-btn" id="photoBtn">📷</button>
-      <input type="file" id="fileInput" accept="image/*" style="display:none">
-      <input type="text" id="messageInput" placeholder="Type message...">
-      <button id="sendBtn">Send</button>
+
+    <!-- MAIN CHAT -->
+    <div class="chat-main">
+      <div class="chat-header">
+        <i class="fas fa-arrow-left chat-back" id="backBtn" onclick="toggleSidebar()"></i>
+        <div class="chat-profile">
+          <div class="avatar">F</div>
+          <div class="chat-status">Online</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:15px">
+          <i class="fas fa-video" style="font-size:1.5rem;cursor:pointer;color:#e9edef"></i>
+          <i class="fas fa-phone" style="font-size:1.5rem;cursor:pointer;color:#e9edef"></i>
+          <i class="fas fa-ellipsis-v" style="font-size:1.2rem;cursor:pointer;color:#e9edef"></i>
+        </div>
+      </div>
+
+      <div class="messages-container" id="messages">
+        <div class="message received">
+          <div class="bubble">
+            <div class="message-text">Hey! WhatsApp clone ready hai 🔥</div>
+            <div class="time">12:30 <i class="fas fa-check-double double-check"></i></div>
+          </div>
+        </div>
+        <div class="message sent">
+          <div class="bubble">
+            <div class="message-text">Perfect! Real time working hai</div>
+            <div class="time">12:31 <i class="fas fa-check-double double-check"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="typing-indicator" id="typingIndicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <span>Typing...</span>
+      </div>
+
+      <div class="input-area">
+        <button class="emoji-btn"><i class="fas fa-smile"></i></button>
+        <label class="attach-btn" for="fileInput"><i class="fas fa-paperclip"></i></label>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+        <textarea id="messageInput" placeholder="Type a message" rows="1"></textarea>
+        <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+      </div>
     </div>
   </div>
 
   <script>
-    class QuickDM {
+    class WhatsAppClone {
       constructor() {
-        this.socket = io('wss://chat-quick.onrender.com/quick');
-        this.peer = null;
-        this.roomId = 'quick-room-' + Math.random().toString(36).substr(2, 9);
+        this.socket = io('https://whatsapp-clone-backend.onrender.com');
+        this.currentChat = 'main';
         this.init();
       }
 
       init() {
         this.bindEvents();
-        this.socket.on('connect', () => {
-          document.getElementById('status').textContent = 'Server connected! 1-click mein friend connect';
-        });
+        this.socket.on('connect', () => console.log('✅ Connected'));
         
-        // Friend connected
-        this.socket.on('friendConnected', () => {
-          document.getElementById('onlineStatus').textContent = 'Online ✅';
-          this.showChat();
-        });
+        // Real-time messages
+        this.socket.on('message', data => this.addMessage(data, 'received'));
+        this.socket.on('image', data => this.addImage(data, 'received'));
+        this.socket.on('typing', data => this.handleTyping(data));
         
-        this.socket.on('message', msg => this.addMessage(msg, 'received'));
-        this.socket.on('image', img => this.addImage(img, 'received'));
-        this.socket.on('typing', typing => {
-          document.getElementById('typing').style.display = typing ? 'block' : 'none';
+        // User status
+        this.socket.on('userOnline', () => {
+          document.querySelector('.chat-status').textContent = 'Online';
         });
       }
 
       bindEvents() {
-        document.getElementById('connectBtn').onclick = () => {
-          this.socket.emit('joinQuickRoom');
+        const sendBtn = document.getElementById('sendBtn');
+        const input = document.getElementById('messageInput');
+        const fileInput = document.getElementById('fileInput');
+
+        sendBtn.onclick = () => this.sendMessage();
+        input.onkeypress = e => {
+          if(e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.sendMessage();
+          }
         };
-        
-        document.getElementById('sendBtn').onclick = () => this.send();
-        document.getElementById('messageInput').onkeypress = e => {
-          if(e.key==='Enter') this.send();
-          else this.socket.emit('typing', true);
+        input.oninput = () => {
+          this.autoResize(input);
+          this.socket.emit('typing', input.value ? true : false);
         };
-        document.getElementById('messageInput').oninput = () => {
-          if(!document.getElementById('messageInput').value) 
-            this.socket.emit('typing', false);
-        };
-        
-        document.getElementById('photoBtn').onclick = () => 
-          document.getElementById('fileInput').click();
-        document.getElementById('fileInput').onchange = e => this.sendPhoto(e);
+
+        fileInput.onchange = e => this.sendImage(e);
+
+        // Auto-resize textarea
+        input.addEventListener('input', () => this.autoResize(input));
       }
 
-      send() {
+      autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        document.getElementById('sendBtn').disabled = !textarea.value.trim();
+      }
+
+      sendMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
-        if(text) {
-          const msg = {
-            text, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
-            sender: 'me'
-          };
-          this.addMessage(msg, 'sent');
-          this.socket.emit('message', msg);
-          input.value = '';
-          this.socket.emit('typing', false);
-        }
+        if(!text) return;
+
+        const message = {
+          text,
+          time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+          sender: 'me',
+          chatId: this.currentChat
+        };
+
+        this.addMessage(message, 'sent');
+        this.socket.emit('message', message);
+        input.value = '';
+        this.autoResize(input);
+        document.getElementById('sendBtn').disabled = true;
       }
 
-      sendPhoto(e) {
-        const file = e.target.files[0];
-        if(file) {
-          const reader = new FileReader();
-          reader.onload = ev => {
-            const img = {
-              data: ev.target.result,
-              time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
-              sender: 'me'
-            };
-            this.addImage(img, 'sent');
-            this.socket.emit('image', img);
+      sendImage(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+
+        const reader = new FileReader();
+        reader.onload = e => {
+          const imageData = {
+            data: e.target.result,
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+            sender: 'me',
+            chatId: this.currentChat
           };
-          reader.readAsDataURL(file);
-        }
+
+          this.addImage(imageData, 'sent');
+          this.socket.emit('image', imageData);
+        };
+        reader.readAsDataURL(file);
       }
 
       addMessage(msg, type) {
-        const msgs = document.getElementById('messages');
+        const container = document.getElementById('messages');
         const div = document.createElement('div');
         div.className = `message ${type}`;
+        
         div.innerHTML = `
           <div class="bubble">
-            <div>${msg.text}</div>
-            <div class="time">${msg.time}</div>
+            <div class="message-text">${msg.text}</div>
+            <div class="time">${msg.time} 
+              ${type === 'sent' ? '<i class="fas fa-check-double double-check"></i>' : '<i class="fas fa-check double-check"></i>'}
+            </div>
           </div>
         `;
-        msgs.appendChild(div);
-        msgs.scrollTop = msgs.scrollHeight;
+        
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
       }
 
       addImage(img, type) {
-        const msgs = document.getElementById('messages');
+        const container = document.getElementById('messages');
         const div = document.createElement('div');
         div.className = `message ${type}`;
+        
         div.innerHTML = `
           <div class="bubble">
-            <img src="${img.data}" class="image" onclick="window.open(this.src)">
-            <div class="time">${img.time}</div>
+            <img src="${img.data}" class="message-image" onclick="this.requestFullscreen()" style="max-width:250px;border-radius:12px;cursor:pointer">
+            <div class="time">${img.time} 
+              ${type === 'sent' ? '<i class="fas fa-check-double double-check"></i>' : '<i class="fas fa-check double-check"></i>'}
+            </div>
           </div>
         `;
-        msgs.appendChild(div);
-        msgs.scrollTop = msgs.scrollHeight;
+        
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
       }
 
-      showChat() {
-        document.getElementById('home').classList.remove('active');
-        document.getElementById('chatScreen').classList.add('active');
+      handleTyping(typing) {
+        const indicator = document.getElementById('typingIndicator');
+        indicator.style.display = typing ? 'flex' : 'none';
       }
     }
 
-    new QuickDM();
+    // Mobile sidebar toggle
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('open');
+    }
+
+    // Initialize
+    const whatsapp = new WhatsAppClone();
   </script>
 </body>
 </html>
