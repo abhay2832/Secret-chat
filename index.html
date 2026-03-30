@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureChat - Private Real-Time Chat</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -15,607 +14,524 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
             overflow: hidden;
             color: #333;
         }
 
-        .screen {
-            display: none;
+        .container {
             height: 100vh;
-            flex-direction: column;
-        }
-
-        .screen.active {
             display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        /* HOME SCREEN */
-        #homeScreen {
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
+            height: 100vh;
             text-align: center;
-            padding: 40px 20px;
+            padding: 2rem;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
         }
 
         .logo {
             font-size: 3rem;
-            margin-bottom: 30px;
-            background: linear-gradient(45deg, #fff, rgba(255,255,255,0.8));
+            font-weight: 800;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin-bottom: 1rem;
+            animation: glow 2s ease-in-out infinite alternate;
         }
 
-        .room-input-container {
-            background: rgba(255,255,255,0.95);
-            padding: 40px;
-            border-radius: 25px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-            backdrop-filter: blur(20px);
-            max-width: 450px;
-            width: 90%;
-            margin-bottom: 20px;
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+            to { text-shadow: 0 0 30px rgba(255,255,255,0.8); }
         }
 
-        .room-input-group {
-            position: relative;
-            margin-bottom: 25px;
-        }
-
-        #roomCode {
+        .room-input {
             width: 100%;
-            padding: 18px 20px;
-            border: 2px solid #e2e8f0;
-            border-radius: 15px;
-            font-size: 1.3rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-align: center;
-            transition: all 0.3s;
-            background: rgba(255,255,255,0.8);
-        }
-
-        #roomCode:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102,126,234,0.1);
-            transform: scale(1.02);
-        }
-
-        .join-btn, .create-btn {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 15px;
+            max-width: 400px;
+            padding: 1rem 1.5rem;
             font-size: 1.2rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin: 10px 0;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .room-input:focus {
+            outline: none;
+            transform: scale(1.02);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
         }
 
         .join-btn {
-            background: linear-gradient(135deg, #48bb78, #38a169);
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(76,175,80,0.3);
         }
 
-        .create-btn {
-            background: linear-gradient(135deg, #ed8936, #dd6b20);
-            color: white;
+        .join-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(76,175,80,0.4);
         }
 
-        .join-btn:hover, .create-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-        }
-
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 40px;
-            max-width: 800px;
-        }
-
-        .feature {
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-        }
-
-        /* CHAT SCREEN */
-        #chatScreen {
-            background: #0a0e17;
+        /* Chat Interface */
+        .chat-container {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
         }
 
         .chat-header {
-            background: rgba(0,0,0,0.9);
-            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(20px);
+            padding: 1rem 2rem;
+            background: rgba(255,255,255,0.8);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         .room-info {
             display: flex;
-            flex-direction: column;
-            gap: 5px;
+            align-items: center;
+            gap: 1rem;
         }
 
         .room-code {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #4CAF50;
+            background: rgba(76,175,80,0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
         }
 
-        .connection-status {
-            font-size: 0.85rem;
-            padding: 4px 12px;
-            border-radius: 20px;
+        .status {
+            font-size: 0.9rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
             font-weight: 500;
         }
 
-        .status-connected {
-            background: rgba(72,187,120,0.2);
-            color: #48bb78;
-        }
+        .status.connected { background: rgba(76,175,80,0.2); color: #4CAF50; }
+        .status.disconnected { background: rgba(244,67,54,0.2); color: #f44336; }
 
-        .status-disconnected {
-            background: rgba(239,68,68,0.2);
-            color: #ef4444;
-        }
-
-        .call-controls {
-            display: flex;
-            gap: 15px;
-        }
-
-        .call-btn {
-            width: 55px;
-            height: 55px;
+        .video-btn, .call-btn {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             border: none;
-            font-size: 1.3rem;
             cursor: pointer;
-            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            margin-left: 0.5rem;
         }
 
-        .voice-call {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-            color: white;
-        }
-
-        .video-call {
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
-            color: white;
-        }
-
-        .call-btn:hover {
-            transform: scale(1.1);
-        }
+        .video-btn { background: linear-gradient(45deg, #2196F3, #1976D2); color: white; }
+        .call-btn { background: linear-gradient(45deg, #FF5722, #E64A19); color: white; }
+        .video-btn:hover, .call-btn:hover { transform: scale(1.1); }
 
         .messages-container {
             flex: 1;
             overflow-y: auto;
-            padding: 25px;
-            background: #0a0e17;
+            padding: 1.5rem;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(248,250,252,0.9));
         }
 
         .message {
-            margin-bottom: 20px;
             display: flex;
-            animation: messageSlideIn 0.4s ease-out;
+            margin-bottom: 1.5rem;
+            animation: slideIn 0.3s ease-out;
+            max-width: 70%;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .message.sent {
-            justify-content: flex-end;
-        }
-
-        .message-bubble {
-            max-width: 65%;
-            padding: 16px 20px;
-            border-radius: 22px;
-            position: relative;
-            word-wrap: break-word;
-            backdrop-filter: blur(15px);
-        }
-
-        .message.sent .message-bubble {
-            background: linear-gradient(135deg, rgba(102,126,234,0.9), rgba(118,75,162,0.9));
-            color: white;
-            border-bottom-right-radius: 6px;
-        }
-
-        .message.received .message-bubble {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            border-bottom-left-radius: 6px;
+            margin-left: auto;
+            flex-direction: row-reverse;
         }
 
         .message-content {
-            font-size: 0.95rem;
-            line-height: 1.5;
+            padding: 1rem 1.2rem;
+            border-radius: 20px;
+            position: relative;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+
+        .message.sent .message-content {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .message.received .message-content {
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .message-time {
             font-size: 0.75rem;
             opacity: 0.7;
-            margin-top: 8px;
-            font-weight: 500;
+            margin-top: 0.3rem;
         }
 
-        .message-image {
-            max-width: 280px;
-            max-height: 300px;
-            border-radius: 16px;
-            cursor: pointer;
-            margin-top: 8px;
-        }
+        .message.sent .message-time { text-align: right; }
 
-        .message-actions {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            display: none;
-            gap: 8px;
-            background: rgba(0,0,0,0.7);
-            padding: 4px;
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-        }
-
-        .message.sent:hover .message-actions {
-            display: flex;
-        }
-
-        .action-btn {
+        .edit-btn {
             background: none;
             border: none;
-            color: rgba(255,255,255,0.8);
-            font-size: 1rem;
+            color: inherit;
             cursor: pointer;
-            padding: 4px;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-
-        .action-btn:hover {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        .typing-indicator {
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: rgba(255,255,255,0.6);
-            font-style: italic;
             font-size: 0.9rem;
-            animation: typingPulse 1.5s infinite;
+            margin-left: 0.5rem;
+            opacity: 0.7;
         }
-
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: rgba(255,255,255,0.4);
-            border-radius: 50%;
-            animation: typingBounce 1.4s infinite ease-in-out;
-        }
-
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
         .input-container {
-            padding: 25px;
-            background: rgba(0,0,0,0.9);
-            border-top: 1px solid rgba(255,255,255,0.1);
             display: flex;
-            align-items: flex-end;
-            gap: 15px;
+            padding: 1.5rem;
+            background: rgba(255,255,255,0.9);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            gap: 1rem;
         }
 
-        #messageInput {
-            flex: 1;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 25px;
-            padding: 18px 22px;
-            color: white;
-            font-size: 1rem;
-            resize: none;
-            min-height: 55px;
-            max-height: 140px;
-            outline: none;
-            backdrop-filter: blur(15px);
-            transition: all 0.3s;
-        }
-
-        #messageInput::placeholder {
-            color: rgba(255,255,255,0.5);
-        }
-
-        #messageInput:focus {
-            border-color: rgba(255,255,255,0.4);
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
-        }
-
-        .emoji-picker {
-            position: absolute;
-            bottom: 100px;
-            left: 25px;
-            background: rgba(0,0,0,0.95);
-            border-radius: 20px;
-            padding: 20px;
-            max-width: 300px;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-            gap: 10px;
-            flex-wrap: wrap;
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(20px);
-            z-index: 100;
-        }
-
-        .emoji {
-            font-size: 1.8rem;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 12px;
-            transition: all 0.2s;
-        }
-
-        .emoji:hover {
-            background: rgba(255,255,255,0.1);
-            transform: scale(1.2);
-        }
-
-        .send-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        #sendButton {
-            width: 55px;
-            height: 55px;
+        .emoji-btn, .file-btn {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             border: none;
-            background: linear-gradient(135deg, #48bb78, #38a169);
-            color: white;
-            font-size: 1.3rem;
+            background: rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
         }
 
-        #sendButton:hover:not(:disabled) {
+        .emoji-btn:hover, .file-btn:hover {
+            background: rgba(0,0,0,0.2);
             transform: scale(1.05);
-            box-shadow: 0 8px 25px rgba(72,187,120,0.4);
         }
 
-        #sendButton:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .message-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-radius: 25px;
+            font-size: 1rem;
+            resize: none;
+            outline: none;
+            transition: all 0.3s ease;
+            max-height: 120px;
         }
 
-        /* CALL UI */
-        .call-overlay {
+        .message-input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.1);
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Video Call */
+        .video-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0,0,0,0.9);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            backdrop-filter: blur(20px);
+            flex-direction: column;
+            gap: 2rem;
         }
 
-        .call-container {
-            text-align: center;
-            color: white;
-            max-width: 400px;
-            padding: 40px;
-            background: rgba(0,0,0,0.8);
-            border-radius: 25px;
-            backdrop-filter: blur(30px);
+        .video-container {
+            display: flex;
+            gap: 1rem;
+            max-width: 90%;
+            max-height: 70%;
         }
 
-        .call-type {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-
-        .remote-video, .local-video {
-            width: 300px;
-            height: 200px;
-            background: #333;
+        video {
+            width: 400px;
+            height: 300px;
+            background: #000;
             border-radius: 15px;
-            margin: 10px auto;
-            object-fit: cover;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
 
-        .local-video {
-            width: 120px;
-            height: 90px;
+        .video-container .local-video {
+            width: 150px;
+            height: 120px;
             position: absolute;
             top: 20px;
             right: 20px;
+            z-index: 10;
         }
 
         .call-controls {
             display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 30px;
-        }
-
-        .call-control-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .accept-call {
-            background: linear-gradient(135deg, #48bb78, #38a169);
-            color: white;
-        }
-
-        .reject-call {
-            background: linear-gradient(135deg, #f56565, #e53e3e);
-            color: white;
+            gap: 1rem;
         }
 
         .end-call {
-            background: linear-gradient(135deg, #f56565, #e53e3e);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #f44336;
             color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
         }
 
-        .call-control-btn:hover {
-            transform: scale(1.1);
+        /* Image Preview */
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
         }
 
-        /* ENCRYPTION STATUS */
-        .encryption-status {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(72,187,120,0.2);
-            color: #48bb78;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        @keyframes typingPulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
-        }
-
-        @keyframes typingBounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-
-        @keyframes messageSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        /* RESPONSIVE */
+        /* Responsive */
         @media (max-width: 768px) {
-            .room-input-container {
-                padding: 30px 20px;
-                margin: 0 10px;
-            }
+            .message { max-width: 85%; }
+            .video-container { flex-direction: column; }
+            video { width: 100%; height: 250px; }
+            .local-video { position: static; width: 100px; height: 80px; }
+        }
 
-            .logo {
-                font-size: 2.5rem;
-            }
+        /* Scrollbar */
+        .messages-container::-webkit-scrollbar {
+            width: 6px;
+        }
 
-            .features {
-                grid-template-columns: 1fr;
-            }
+        .messages-container::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
 
-            .call-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 1.1rem;
-            }
-
-            .remote-video, .local-video {
-                width: 100%;
-                height: 250px;
-            }
-
-            .local-video {
-                width: 80px;
-                height: 60px;
-                top: 10px;
-                right: 10px;
-            }
+        .messages-container::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.3);
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
-    <!-- HOME SCREEN -->
-    <div id="homeScreen" class="screen active">
-        <div class="logo">🔒 SecureChat</div>
-        <div class="room-input-container">
-            <div class="room-input-group">
-                <input 
-                    type="text" 
-                    id="roomCode" 
-                    placeholder="ROOM123 or MOTOROLA" 
-                    maxlength="12"
-                    autocomplete="off"
-                >
-            </div>
-            <button class="join-btn" id="joinRoomBtn">Join Room 🚀</button>
-            <button class="create-btn" id="createRoomBtn">Create New Room ✨</button>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div class="welcome-screen" id="welcomeScreen">
+            <div class="logo">🔐 SecureChat</div>
+            <p style="color: white; font-size: 1.2rem; margin-bottom: 2rem; max-width: 400px;">
+                Enter a room code to start a private, encrypted chat with video calling
+            </p>
+            <input type="text" class="room-input" id="roomInput" placeholder="e.g. MOTOROLA" maxlength="20">
+            <button class="join-btn" onclick="joinRoom()">Join Room</button>
+            <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 1rem;">
+                Share this code with your friend
+            </p>
         </div>
-        <div class="features">
-            <div class="feature">
-                <div style="font-size: 2rem; margin-bottom: 10px;">🔐</div>
-                <strong>End-to-End Encrypted</strong>
+
+        <!-- Chat Interface -->
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-header">
+                <div class="room-info">
+                    <div class="room-code" id="roomCode"></div>
+                    <div class="status" id="connectionStatus">Connecting...</div>
+                </div>
+                <div>
+                    <button class="video-btn" id="videoBtn" title="Video Call">📹</button>
+                    <button class="call-btn" id="callBtn" title="Voice Call">📞</button>
+                </div>
             </div>
-            <div class="feature">
-                <div style="font-size: 2rem; margin-bottom: 10px;">📹</div>
-                <strong>Video Calling</strong>
+            <div class="messages-container" id="messagesContainer"></div>
+            <div class="input-container">
+                <button class="emoji-btn" id="emojiBtn" title="Emojis">😊</button>
+                <button class="file-btn" id="fileBtn" title="Send Image">📷</button>
+                <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+                <button class="send-btn" id="sendBtn">➤</button>
             </div>
-            <div class="feature">
-                <div style="font-size: 2rem; margin-bottom: 10px;">🖼️</div>
-                <strong>Photo Sharing</strong>
+        </div>
+
+        <!-- Video Call Overlay -->
+        <div class="video-overlay" id="videoOverlay">
+            <div class="video-container">
+                <video id="remoteVideo" autoplay playsinline muted></video>
+                <video id="localVideo" autoplay playsinline muted class="local-video"></video>
             </div>
-            <div class="feature">
-                <div style="font-size: 2rem; margin-bottom: 10px;">⚡</div>
-                <strong>Real-Time</strong>
+            <div class="call-controls">
+                <button class="end-call" id="endCallBtn" title="End Call">📴</button>
             </div>
         </div>
     </div>
 
-    <!-- CHAT SCREEN -->
-    <div id="chatScreen" class="screen">
-        <div class="encryption-status" id="encryptionStatus">🔒 E2E Encrypted</div>
-        <div class="chat-header">
-            <div class="room-info">
-                <div class="room-code" id="currentRoomCode">-</div>
-                <div class="connection-status status-disconnected" id="
+    <script>
+        class SecureChat {
+            constructor() {
+                this.peer = null;
+                this.currentPeerId = null;
+                this.conn = null;
+                this.localStream = null;
+                this.remoteStream = null;
+                this.isVideoCallActive = false;
+                this.roomCode = '';
+                this.encryptionKey = null;
+                this.messageEditMode = null;
+
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.generateEncryptionKey();
+            }
+
+            generateEncryptionKey() {
+                // Generate a 256-bit AES key for encryption
+                window.crypto.subtle.generateKey(
+                    { name: 'AES-GCM', length: 256 },
+                    true,
+                    ['encrypt', 'decrypt']
+                ).then(key => {
+                    this.encryptionKey = key;
+                });
+            }
+
+            async encryptMessage(message) {
+                if (!this.encryptionKey) throw new Error('Encryption key not ready');
+                
+                const encoder = new TextEncoder();
+                const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                const data = encoder.encode(message);
+                
+                const encrypted = await window.crypto.subtle.encrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    this.encryptionKey,
+                    data
+                );
+                
+                const combined = new Uint8Array(iv.length + encrypted.byteLength);
+                combined.set(iv, 0);
+                combined.set(new Uint8Array(encrypted), iv.length);
+                
+                return btoa(String.fromCharCode(...combined));
+            }
+
+            async decryptMessage(encryptedData) {
+                if (!this.encryptionKey) throw new Error('Encryption key not ready');
+                
+                const binary = atob(encryptedData);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                
+                const iv = bytes.slice(0, 12);
+                const data = bytes.slice(12);
+                
+                const decrypted = await window.crypto.subtle.decrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    this.encryptionKey,
+                    data
+                );
+                
+                const decoder = new TextDecoder();
+                return decoder.decode(decrypted);
+            }
+
+            setupEventListeners() {
+                // Room join
+                document.getElementById('roomInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.joinRoom();
+                });
+
+                // Message input
+                const messageInput = document.getElementById('messageInput');
+                messageInput.addEventListener('input', this.autoResize.bind(this));
+                messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                // Buttons
+                document.getElementById('sendBtn').addEventListener('click', () => this.sendMessage());
+                document.getElementById('fileBtn').addEventListener('click', () => this.selectFile());
+                document.getElementById('emojiBtn').addEventListener('click', () => this.toggleEmojiPicker());
+                document.getElementById('endCallBtn').addEventListener('click', () => this.endCall());
+                document.getElementById('videoBtn').addEventListener('click', () => this.startVideoCall());
+                document.getElementById('callBtn').addEventListener('click', () => this.startVoiceCall());
+            }
+
+            joinRoom() {
+                const roomInput = document.getElementById('roomInput');
+                this.roomCode = roomInput.value.trim().toUpperCase();
+                
+                if (!this.roomCode) {
+                    alert('Please enter a room code');
+                    return;
+                }
+
+                document.getElementById('welcomeScreen').style.display = 'none';
+                document.getElementById('chatContainer').style.display = 'flex';
+                document.getElementById('roomCode').textContent = this.roomCode;
+
+                this.initPeer();
+            }
+
+            initPeer() {
+                this.peer = new Peer(undefined, {
+                    host: 'peerjs-server.herokuapp.com',
+                    secure: true,
+                    config: {
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:
